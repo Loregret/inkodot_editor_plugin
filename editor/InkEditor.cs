@@ -4,7 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Godot;
 using Ink;
-using GodotInkle;
+using GodotInk;
 
 namespace InkodotEditor;
 
