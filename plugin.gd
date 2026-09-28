@@ -1,10 +1,10 @@
 @tool
 extends EditorPlugin
 
-@export var editor_scene := preload("res://addons/inkodot_editor/editor/InkEditor.tscn")
-@export var icon := preload("res://addons/inkodot_editor/icon.svg")
+@export var editor_scene := preload("res://addons/inkodot_editor_plugin/editor/InkEditor.tscn")
+@export var icon := preload("res://addons/inkodot_editor_plugin/icon.svg")
 
-const InkDemoCopier := preload("res://addons/inkodot_editor/editor/ink_demo_copier.gd")
+const InkDemoCopier := preload("res://addons/inkodot_editor_plugin/editor/ink_demo_copier.gd")
 
 const dock_name := "Inkodot"
 const STANDALONE_MARKER := "inkodot/is_standalone_app"
