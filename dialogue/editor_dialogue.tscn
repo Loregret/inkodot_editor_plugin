@@ -1,0 +1,48 @@
+[gd_scene format=3 uid="uid://8kb5qsfatcxy"]
+
+[ext_resource type="Script" uid="uid://dcd2aoaf5okk8" path="res://addons/inkodot_editor/dialogue/editor_dialogue.gd" id="1_wru2s"]
+[ext_resource type="Script" uid="uid://bjxnsg23s5onq" path="res://addons/inkodot_editor/text_formatter/TextFormatter.cs" id="2_ms2n6"]
+[ext_resource type="PackedScene" uid="uid://wkjc00jaef0t" path="res://addons/inkodot_editor/dialogue/editor_dialogue_richtext.tscn" id="3_isn8k"]
+[ext_resource type="PackedScene" uid="uid://comac77ke5g7o" path="res://addons/inkodot_editor/user_interface/ink_dialogue/choice_button/DialogueChoiceButton.tscn" id="4_dqlj8"]
+
+[sub_resource type="Resource" id="Resource_3hblv"]
+script = ExtResource("2_ms2n6")
+metadata/_custom_type_script = "uid://bjxnsg23s5onq"
+
+[node name="Dialogue" type="Control" unique_id=1274912356 node_paths=PackedStringArray("container", "scroll_container")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_wru2s")
+formatter = SubResource("Resource_3hblv")
+richtext_scene = ExtResource("3_isn8k")
+button_scene = ExtResource("4_dqlj8")
+container = NodePath("ScrollContainer/VBoxContainer")
+scroll_container = NodePath("ScrollContainer")
+metadata/_edit_use_anchors_ = true
+metadata/_edit_lock_ = true
+
+[node name="ScrollContainer" type="ScrollContainer" parent="." unique_id=1812291191]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 4
+vertical_scroll_mode = 4
+scroll_hint_mode = 3
+metadata/_edit_use_anchors_ = true
+metadata/_edit_lock_ = true
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ScrollContainer" unique_id=1158137968]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+metadata/_edit_use_anchors_ = true
+metadata/_edit_lock_ = true

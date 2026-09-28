@@ -1,0 +1,8 @@
+[gd_resource type="SyntaxHighlighter" format=3 uid="uid://bammdbah3vl60"]
+
+[ext_resource type="Script" uid="uid://bpidqfis3gbv6" path="res://addons/dialogue_editor/syntax/syntax_highlighter.gd" id="1_21spu"]
+
+
+[resource]
+script = ExtResource("1_21spu")
+metadata/_custom_type_script = "uid://bpidqfis3gbv6"

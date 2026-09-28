@@ -1,0 +1,36 @@
+[gd_scene format=3 uid="uid://bjhoa78r8qiiv"]
+
+[ext_resource type="PackedScene" uid="uid://comac77ke5g7o" path="res://addons/inkodot_editor/user_interface/ink_dialogue/choice_button/DialogueChoiceButton.tscn" id="1_sdnh8"]
+[ext_resource type="FontFile" uid="uid://c1vg3v4r4oy71" path="res://addons/inkodot_editor/assets/fonts/sans/inter/inter_24pt_regular.ttf" id="2_qqe1f"]
+[ext_resource type="FontFile" uid="uid://rocmgvn7mnld" path="res://addons/inkodot_editor/assets/fonts/sans/inter/inter_24pt_semibold.ttf" id="3_ns6ug"]
+[ext_resource type="FontFile" uid="uid://d2b2ilwwwrt7p" path="res://addons/inkodot_editor/assets/fonts/sans/inter/inter_24pt_semibolditalic.ttf" id="4_ns3hy"]
+[ext_resource type="FontFile" uid="uid://cnkv0aemqcy56" path="res://addons/inkodot_editor/assets/fonts/sans/inter/inter_24pt_thinitalic.ttf" id="5_5s1ro"]
+[ext_resource type="FontFile" uid="uid://dncplol3my0ck" path="res://addons/inkodot_editor/assets/fonts/mono/jetbrains_mono/jetbrainsmono_thin.ttf" id="6_y0okg"]
+
+
+[node name="EditorChoiceButton" unique_id=217440614 instance=ExtResource("1_sdnh8")]
+anchors_preset = -1
+anchor_right = 0.20204978
+anchor_bottom = 0.037760418
+offset_right = 0.0
+offset_bottom = -3.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+metadata/_edit_use_anchors_ = true
+
+[node name="RichTextLabel" parent="MarginContainer" parent_id_path=PackedInt32Array(2123930548) index="0" unique_id=751527792]
+theme_override_fonts/normal_font = ExtResource("2_qqe1f")
+theme_override_fonts/bold_font = ExtResource("3_ns6ug")
+theme_override_fonts/bold_italics_font = ExtResource("4_ns3hy")
+theme_override_fonts/italics_font = ExtResource("5_5s1ro")
+theme_override_fonts/mono_font = ExtResource("6_y0okg")
+theme_override_font_sizes/normal_font_size = 12
+theme_override_font_sizes/bold_font_size = 12
+theme_override_font_sizes/bold_italics_font_size = 12
+theme_override_font_sizes/italics_font_size = 12
+theme_override_font_sizes/mono_font_size = 12
+text = "1. Choice"
+
+[node name="Button" parent="." index="1" unique_id=235111935]
+ClickEnabled = false
+HoverEnabled = false

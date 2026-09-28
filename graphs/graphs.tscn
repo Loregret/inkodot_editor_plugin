@@ -1,0 +1,332 @@
+[gd_scene format=3 uid="uid://c3ink65pjiob0"]
+
+[node name="Graphs" type="GraphEdit" unique_id=588671851]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="GraphNode" type="GraphNode" parent="." unique_id=919513609]
+layout_mode = 0
+offset_left = 218.0
+offset_top = 232.0
+offset_right = 353.0
+offset_bottom = 350.0
+mouse_filter = 1
+position_offset = Vector2(218, 232)
+title = "Prison2.ink"
+slot/0/left_enabled = true
+slot/0/left_type = 0
+slot/0/left_color = Color(1, 1, 1, 1)
+slot/0/left_icon = null
+slot/0/right_enabled = true
+slot/0/right_type = 0
+slot/0/right_color = Color(1, 1, 1, 1)
+slot/0/right_icon = null
+slot/0/draw_stylebox = true
+slot/1/left_enabled = false
+slot/1/left_type = 0
+slot/1/left_color = Color(1, 1, 1, 1)
+slot/1/left_icon = null
+slot/1/right_enabled = false
+slot/1/right_type = 0
+slot/1/right_color = Color(1, 1, 1, 1)
+slot/1/right_icon = null
+slot/1/draw_stylebox = true
+
+[node name="Button" type="Button" parent="GraphNode" unique_id=886520676]
+layout_mode = 2
+text = "Play"
+
+[node name="Button2" type="Button" parent="GraphNode" unique_id=316252658]
+layout_mode = 2
+text = "Edit"
+
+[node name="GraphNode2" type="GraphNode" parent="." unique_id=61102142]
+layout_mode = 0
+offset_left = 404.0
+offset_top = 235.0
+offset_right = 539.0
+offset_bottom = 353.0
+mouse_filter = 1
+position_offset = Vector2(404, 235)
+title = "Prison2.ink"
+slot/0/left_enabled = true
+slot/0/left_type = 0
+slot/0/left_color = Color(1, 1, 1, 1)
+slot/0/left_icon = null
+slot/0/right_enabled = true
+slot/0/right_type = 0
+slot/0/right_color = Color(1, 1, 1, 1)
+slot/0/right_icon = null
+slot/0/draw_stylebox = true
+slot/1/left_enabled = false
+slot/1/left_type = 0
+slot/1/left_color = Color(1, 1, 1, 1)
+slot/1/left_icon = null
+slot/1/right_enabled = false
+slot/1/right_type = 0
+slot/1/right_color = Color(1, 1, 1, 1)
+slot/1/right_icon = null
+slot/1/draw_stylebox = true
+
+[node name="Button" type="Button" parent="GraphNode2" unique_id=2080944895]
+layout_mode = 2
+text = "Play"
+
+[node name="Button2" type="Button" parent="GraphNode2" unique_id=1795991797]
+layout_mode = 2
+text = "Edit"
+
+[node name="GraphNode3" type="GraphNode" parent="." unique_id=1188511799]
+layout_mode = 0
+offset_left = 575.0
+offset_top = 78.0
+offset_right = 710.0
+offset_bottom = 196.0
+mouse_filter = 1
+position_offset = Vector2(575, 78)
+title = "Prison2.ink"
+slot/0/left_enabled = true
+slot/0/left_type = 0
+slot/0/left_color = Color(1, 1, 1, 1)
+slot/0/left_icon = null
+slot/0/right_enabled = true
+slot/0/right_type = 0
+slot/0/right_color = Color(1, 1, 1, 1)
+slot/0/right_icon = null
+slot/0/draw_stylebox = true
+slot/1/left_enabled = false
+slot/1/left_type = 0
+slot/1/left_color = Color(1, 1, 1, 1)
+slot/1/left_icon = null
+slot/1/right_enabled = false
+slot/1/right_type = 0
+slot/1/right_color = Color(1, 1, 1, 1)
+slot/1/right_icon = null
+slot/1/draw_stylebox = true
+
+[node name="Button" type="Button" parent="GraphNode3" unique_id=486614496]
+layout_mode = 2
+text = "Play"
+
+[node name="Button2" type="Button" parent="GraphNode3" unique_id=1869195395]
+layout_mode = 2
+text = "Edit"
+
+[node name="GraphNode4" type="GraphNode" parent="." unique_id=1013717363]
+layout_mode = 0
+offset_left = 578.0
+offset_top = 235.0
+offset_right = 713.0
+offset_bottom = 353.0
+mouse_filter = 1
+position_offset = Vector2(578, 235)
+title = "Prison2.ink"
+slot/0/left_enabled = true
+slot/0/left_type = 0
+slot/0/left_color = Color(1, 1, 1, 1)
+slot/0/left_icon = null
+slot/0/right_enabled = true
+slot/0/right_type = 0
+slot/0/right_color = Color(1, 1, 1, 1)
+slot/0/right_icon = null
+slot/0/draw_stylebox = true
+slot/1/left_enabled = false
+slot/1/left_type = 0
+slot/1/left_color = Color(1, 1, 1, 1)
+slot/1/left_icon = null
+slot/1/right_enabled = false
+slot/1/right_type = 0
+slot/1/right_color = Color(1, 1, 1, 1)
+slot/1/right_icon = null
+slot/1/draw_stylebox = true
+
+[node name="Button" type="Button" parent="GraphNode4" unique_id=862902426]
+layout_mode = 2
+text = "Play"
+
+[node name="Button2" type="Button" parent="GraphNode4" unique_id=147808956]
+layout_mode = 2
+text = "Edit"
+
+[node name="GraphNode5" type="GraphNode" parent="." unique_id=237735176]
+layout_mode = 0
+offset_left = 577.0
+offset_top = 387.0
+offset_right = 712.0
+offset_bottom = 505.0
+mouse_filter = 1
+position_offset = Vector2(577, 387)
+title = "Prison2.ink"
+slot/0/left_enabled = true
+slot/0/left_type = 0
+slot/0/left_color = Color(1, 1, 1, 1)
+slot/0/left_icon = null
+slot/0/right_enabled = true
+slot/0/right_type = 0
+slot/0/right_color = Color(1, 1, 1, 1)
+slot/0/right_icon = null
+slot/0/draw_stylebox = true
+slot/1/left_enabled = false
+slot/1/left_type = 0
+slot/1/left_color = Color(1, 1, 1, 1)
+slot/1/left_icon = null
+slot/1/right_enabled = false
+slot/1/right_type = 0
+slot/1/right_color = Color(1, 1, 1, 1)
+slot/1/right_icon = null
+slot/1/draw_stylebox = true
+
+[node name="Button" type="Button" parent="GraphNode5" unique_id=160305476]
+layout_mode = 2
+text = "Play"
+
+[node name="Button2" type="Button" parent="GraphNode5" unique_id=592896599]
+layout_mode = 2
+text = "Edit"
+
+[node name="GraphNode6" type="GraphNode" parent="." unique_id=161598792]
+layout_mode = 0
+offset_left = 746.0
+offset_top = 25.0
+offset_right = 881.0
+offset_bottom = 143.0
+mouse_filter = 1
+position_offset = Vector2(746, 25)
+title = "Prison2.ink"
+slot/0/left_enabled = true
+slot/0/left_type = 0
+slot/0/left_color = Color(1, 1, 1, 1)
+slot/0/left_icon = null
+slot/0/right_enabled = true
+slot/0/right_type = 0
+slot/0/right_color = Color(1, 1, 1, 1)
+slot/0/right_icon = null
+slot/0/draw_stylebox = true
+slot/1/left_enabled = false
+slot/1/left_type = 0
+slot/1/left_color = Color(1, 1, 1, 1)
+slot/1/left_icon = null
+slot/1/right_enabled = false
+slot/1/right_type = 0
+slot/1/right_color = Color(1, 1, 1, 1)
+slot/1/right_icon = null
+slot/1/draw_stylebox = true
+
+[node name="Button" type="Button" parent="GraphNode6" unique_id=1399410935]
+layout_mode = 2
+text = "Play"
+
+[node name="Button2" type="Button" parent="GraphNode6" unique_id=232986341]
+layout_mode = 2
+text = "Edit"
+
+[node name="GraphNode7" type="GraphNode" parent="." unique_id=1217753366]
+layout_mode = 0
+offset_left = 749.0
+offset_top = 225.0
+offset_right = 884.0
+offset_bottom = 343.0
+mouse_filter = 1
+position_offset = Vector2(749, 225)
+title = "Prison2.ink"
+slot/0/left_enabled = true
+slot/0/left_type = 0
+slot/0/left_color = Color(1, 1, 1, 1)
+slot/0/left_icon = null
+slot/0/right_enabled = true
+slot/0/right_type = 0
+slot/0/right_color = Color(1, 1, 1, 1)
+slot/0/right_icon = null
+slot/0/draw_stylebox = true
+slot/1/left_enabled = false
+slot/1/left_type = 0
+slot/1/left_color = Color(1, 1, 1, 1)
+slot/1/left_icon = null
+slot/1/right_enabled = false
+slot/1/right_type = 0
+slot/1/right_color = Color(1, 1, 1, 1)
+slot/1/right_icon = null
+slot/1/draw_stylebox = true
+
+[node name="Button" type="Button" parent="GraphNode7" unique_id=1044211797]
+layout_mode = 2
+text = "Play"
+
+[node name="Button2" type="Button" parent="GraphNode7" unique_id=1193500359]
+layout_mode = 2
+text = "Edit"
+
+[node name="GraphNode8" type="GraphNode" parent="." unique_id=835969894]
+layout_mode = 0
+offset_left = 759.0
+offset_top = 405.0
+offset_right = 894.0
+offset_bottom = 523.0
+mouse_filter = 1
+position_offset = Vector2(759, 405)
+title = "Prison2.ink"
+slot/0/left_enabled = true
+slot/0/left_type = 0
+slot/0/left_color = Color(1, 1, 1, 1)
+slot/0/left_icon = null
+slot/0/right_enabled = true
+slot/0/right_type = 0
+slot/0/right_color = Color(1, 1, 1, 1)
+slot/0/right_icon = null
+slot/0/draw_stylebox = true
+slot/1/left_enabled = false
+slot/1/left_type = 0
+slot/1/left_color = Color(1, 1, 1, 1)
+slot/1/left_icon = null
+slot/1/right_enabled = false
+slot/1/right_type = 0
+slot/1/right_color = Color(1, 1, 1, 1)
+slot/1/right_icon = null
+slot/1/draw_stylebox = true
+
+[node name="Button" type="Button" parent="GraphNode8" unique_id=1250401019]
+layout_mode = 2
+text = "Play"
+
+[node name="Button2" type="Button" parent="GraphNode8" unique_id=1123889844]
+layout_mode = 2
+text = "Edit"
+
+[node name="GraphNode9" type="GraphNode" parent="." unique_id=245008366]
+layout_mode = 0
+offset_left = 762.0
+offset_top = 553.0
+offset_right = 897.0
+offset_bottom = 671.0
+mouse_filter = 1
+position_offset = Vector2(762, 553)
+title = "Prison2.ink"
+slot/0/left_enabled = true
+slot/0/left_type = 0
+slot/0/left_color = Color(1, 1, 1, 1)
+slot/0/left_icon = null
+slot/0/right_enabled = true
+slot/0/right_type = 0
+slot/0/right_color = Color(1, 1, 1, 1)
+slot/0/right_icon = null
+slot/0/draw_stylebox = true
+slot/1/left_enabled = false
+slot/1/left_type = 0
+slot/1/left_color = Color(1, 1, 1, 1)
+slot/1/left_icon = null
+slot/1/right_enabled = false
+slot/1/right_type = 0
+slot/1/right_color = Color(1, 1, 1, 1)
+slot/1/right_icon = null
+slot/1/draw_stylebox = true
+
+[node name="Button" type="Button" parent="GraphNode9" unique_id=259477927]
+layout_mode = 2
+text = "Play"
+
+[node name="Button2" type="Button" parent="GraphNode9" unique_id=1565924966]
+layout_mode = 2
+text = "Edit"

@@ -1,0 +1,110 @@
+[gd_scene format=3 uid="uid://comac77ke5g7o"]
+
+[ext_resource type="Script" uid="uid://b1euj74km1ov" path="res://addons/inkodot_editor/user_interface/ink_dialogue/choice_button/DialogueChoiceButton.cs" id="1_iayka"]
+[ext_resource type="FontFile" uid="uid://bvtigbtxw58ko" path="res://addons/inkodot_editor/assets/fonts/serif/pt_serif/ptserif_regular.ttf" id="2_2rrl0"]
+[ext_resource type="FontFile" uid="uid://xi3cyarc2hqm" path="res://addons/inkodot_editor/assets/fonts/serif/pt_serif/ptserif_bold.ttf" id="3_ea53d"]
+[ext_resource type="FontFile" uid="uid://d1dbatxltt1fr" path="res://addons/inkodot_editor/assets/fonts/serif/pt_serif/ptserif_bolditalic.ttf" id="4_qs0h6"]
+[ext_resource type="FontFile" uid="uid://b3idqgq72npx6" path="res://addons/inkodot_editor/assets/fonts/serif/pt_serif/ptserif_italic.ttf" id="5_saobo"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ybk1u"]
+content_margin_left = 2.0
+content_margin_top = 2.0
+content_margin_right = 2.0
+content_margin_bottom = 2.0
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_q4ptj"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wci6k"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.10747976, 0.10747973, 0.10747977, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+corner_detail = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_b5qim"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0, 0, 0, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+corner_detail = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fo6u3"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(1, 1, 1, 0.88235295)
+draw_center = false
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+corner_detail = 6
+expand_margin_left = 2.0
+expand_margin_top = 2.0
+expand_margin_right = 2.0
+expand_margin_bottom = 2.0
+
+[node name="DialogueChoiceButton" type="PanelContainer" unique_id=217440614 node_paths=PackedStringArray("Button", "RichTextLabel")]
+custom_minimum_size = Vector2(350, 0)
+clip_contents = true
+offset_right = 350.0
+offset_bottom = 67.0
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_ybk1u")
+script = ExtResource("1_iayka")
+Button = NodePath("Button")
+RichTextLabel = NodePath("MarginContainer/RichTextLabel")
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=2123930548]
+layout_mode = 2
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_right = 5
+
+[node name="RichTextLabel" type="RichTextLabel" parent="MarginContainer" unique_id=751527792]
+clip_contents = false
+layout_mode = 2
+mouse_filter = 2
+theme_override_fonts/normal_font = ExtResource("2_2rrl0")
+theme_override_fonts/bold_font = ExtResource("3_ea53d")
+theme_override_fonts/bold_italics_font = ExtResource("4_qs0h6")
+theme_override_fonts/italics_font = ExtResource("5_saobo")
+theme_override_font_sizes/normal_font_size = 15
+theme_override_font_sizes/bold_font_size = 15
+theme_override_font_sizes/bold_italics_font_size = 15
+theme_override_font_sizes/italics_font_size = 15
+theme_override_font_sizes/mono_font_size = 15
+theme_override_styles/normal = SubResource("StyleBoxEmpty_q4ptj")
+bbcode_enabled = true
+text = "[color=orange]1.[/color] Choice"
+fit_content = true
+vertical_alignment = 1
+metadata/_edit_use_anchors_ = true
+
+[node name="Button" type="Button" parent="." unique_id=235111935]
+show_behind_parent = true
+custom_minimum_size = Vector2(100, 25)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_wci6k")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_b5qim")
+theme_override_styles/focus = SubResource("StyleBoxFlat_fo6u3")

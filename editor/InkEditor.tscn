@@ -1,0 +1,1828 @@
+[gd_scene format=3 uid="uid://e7n1blit5uca"]
+
+[ext_resource type="Script" uid="uid://bkh2103o4nwd5" path="res://addons/inkodot_editor/editor/ink_editor_root.gd" id="1_drkxy"]
+[ext_resource type="FontFile" uid="uid://bvm1mx6uw335n" path="res://addons/inkodot_editor/assets/fonts/mono/jetbrains_mono/jetbrainsmono_light.ttf" id="1_wqaw2"]
+[ext_resource type="SyntaxHighlighter" uid="uid://bammdbah3vl60" path="res://addons/inkodot_editor/syntax/ink_syntax_highlighter.tres" id="2_pux6q"]
+[ext_resource type="Script" uid="uid://b8ftvtj8sjshd" path="res://addons/inkodot_editor/editor/InkEditor.cs" id="3_pppn0"]
+[ext_resource type="PackedScene" uid="uid://8kb5qsfatcxy" path="res://addons/inkodot_editor/dialogue/editor_dialogue.tscn" id="4_e8xbx"]
+[ext_resource type="PackedScene" uid="uid://bisdqn1c1dv1m" path="res://addons/inkodot_editor/search_popup/search_popup.tscn" id="4_lokl3"]
+[ext_resource type="Texture2D" uid="uid://c0oqjcidhjrmi" path="res://addons/inkodot_editor/assets/icons/gui/restart.svg" id="5_54cce"]
+[ext_resource type="FontFile" uid="uid://cn66q2u35f5oh" path="res://addons/inkodot_editor/assets/fonts/mono/jetbrains_mono/jetbrainsmono_bold.ttf" id="5_e8xbx"]
+[ext_resource type="Texture2D" uid="uid://buwgt770c7to4" path="res://addons/inkodot_editor/assets/icons/gui/back.svg" id="6_54cce"]
+[ext_resource type="FontFile" uid="uid://doaeiw57pwvwg" path="res://addons/inkodot_editor/assets/fonts/mono/jetbrains_mono/jetbrainsmono_bolditalic.ttf" id="6_cevi5"]
+[ext_resource type="FontFile" uid="uid://bd70hx8p0e0xl" path="res://addons/inkodot_editor/assets/fonts/mono/jetbrains_mono/jetbrainsmono_italic.ttf" id="7_yj2lj"]
+
+[sub_resource type="GDScript" id="GDScript_aqlu3"]
+script/source = "@tool
+extends PopupMenu
+
+enum id_list {
+	NEW_FILE = 1,
+	OPEN_FOLDER,
+	IMPORT_FILE,
+	EXPORT_FILE,
+	SAVE_SESSION,
+	DISCARD_SESSION,
+}
+
+var _is_mobile := false
+var _pending_export_path := \"\"
+
+func _ready():
+	_is_mobile = OS.has_feature(\"mobile\") or OS.has_feature(\"android\") or OS.has_feature(\"ios\")
+
+	clear(true)
+	add_item(\"New File\", id_list.NEW_FILE)
+
+	if _is_mobile:
+		add_item(\"Import File...\", id_list.IMPORT_FILE)
+		add_item(\"Export File...\", id_list.EXPORT_FILE)
+	else:
+		add_item(\"Open Folder\", id_list.OPEN_FOLDER)
+
+	add_separator()
+	add_item(\"Save Session\", id_list.SAVE_SESSION)
+	add_item(\"Discard Session\", id_list.DISCARD_SESSION)
+
+	id_pressed.connect(_on_id_pressed)
+
+func _on_id_pressed(id: int):
+	match id:
+		id_list.NEW_FILE: new_file()
+		id_list.OPEN_FOLDER: show_open_dialog()
+		id_list.IMPORT_FILE: show_import_dialog()
+		id_list.EXPORT_FILE: show_export_dialog()
+		id_list.SAVE_SESSION: save_session()
+		id_list.DISCARD_SESSION: discard_session()
+
+
+#region New File
+
+func new_file():
+	var dir := _resolve_new_file_dir()
+	if dir.is_empty():
+		push_warning(\"[Inkodot]: No valid directory to create a file in.\")
+		return
+	%FileTree.open_new_file_dialog(dir)
+
+func _resolve_new_file_dir() -> String:
+	var tree_dir: String = %FileTree.get_selected_target_dir()
+	if not tree_dir.is_empty() and DirAccess.dir_exists_absolute(tree_dir):
+		return tree_dir
+
+	var main: String = %CodeEdit.MainFolder
+	if not main.is_empty() and DirAccess.dir_exists_absolute(main):
+		return main
+
+	return \"\"
+
+#endregion
+
+
+#region Session
+
+func save_session():
+	%CodeEdit.SaveSession()
+	%FileTree.update_all_save_states()
+
+func discard_session():
+	%CodeEdit.DiscardSession()
+	%FileTree.update_all_save_states()
+
+#endregion
+
+
+#region Desktop — Open Folder
+
+## Desktop only. Opens the OS folder picker, starting at the current
+## MainFolder. In standalone desktop mode this is the folder next to the
+## executable; in plugin mode it's res://. Both absolute and res:// paths
+## work.
+func show_open_dialog():
+	var start := %CodeEdit.MainFolder as String
+	if not start or start.is_empty():
+		start = \"res://\"
+
+	DisplayServer.file_dialog_show(
+		\"Open Folder\", start, \"\", false,
+		DisplayServer.FILE_DIALOG_MODE_OPEN_DIR, [],
+		_on_folder_chosen)
+
+func _on_folder_chosen(status: bool, selected_paths: PackedStringArray, selected_filter_index: int):
+	if not status: return
+	var new_path := selected_paths[selected_filter_index]
+	%CodeEdit.MainFolder = new_path
+	%CodeEdit.SaveLastFolder()
+	%FileTree.regenerate_tree()
+
+#endregion
+
+
+#region Mobile — Import / Export File
+
+## Mobile only. Opens the OS file picker, restricted to .ink files, and
+## copies the selected file into the workspace.
+##
+## On Android the picker returns a content:// URI, which Godot's FileAccess
+## can read on 4.4+. The file's original location is irrelevant — we grab
+## its bytes and write our own copy into <user_data>/ink/.
+func show_import_dialog():
+	DisplayServer.file_dialog_show(
+		\"Import Ink File\",
+		\"\", \".ink\", false,
+		DisplayServer.FILE_DIALOG_MODE_OPEN_FILE,
+		[\"*.ink\"],
+		_on_import_file_chosen)
+
+func _on_import_file_chosen(status: bool, selected_paths: PackedStringArray, _filter_index: int):
+	if not status or selected_paths.is_empty(): return
+
+	var src_uri := selected_paths[0]
+	_copy_uri_into_workspace(src_uri)
+
+
+## Copies the currently open file out to a location chosen by the user via
+## the OS save dialog.
+func show_export_dialog():
+	var source := %CodeEdit.FilePath as String
+	if not source or source.is_empty():
+		push_warning(\"[Inkodot]: No file is currently open to export.\")
+		return
+	if not FileAccess.file_exists(source):
+		push_warning(\"[Inkodot]: Source file no longer exists: %s\" % source)
+		return
+
+	_pending_export_path = source
+
+	DisplayServer.file_dialog_show(
+		\"Export Ink File\",
+		\"\", source.get_file(), false,
+		DisplayServer.FILE_DIALOG_MODE_SAVE_FILE,
+		[\"*.ink\"],
+		_on_export_file_chosen)
+
+func _on_export_file_chosen(status: bool, selected_paths: PackedStringArray, _filter_index: int):
+	var source := _pending_export_path
+	_pending_export_path = \"\"
+
+	if not status or selected_paths.is_empty(): return
+	if source.is_empty(): return
+
+	var dest_uri := selected_paths[0]
+
+	var src := FileAccess.open(source, FileAccess.READ)
+	if not src:
+		push_warning(\"[Inkodot]: Could not read source: %s\" % source)
+		return
+	var bytes := src.get_buffer(src.get_length())
+	src.close()
+
+	var dst := FileAccess.open(dest_uri, FileAccess.WRITE)
+	if not dst:
+		push_warning(\"[Inkodot]: Could not write to destination: %s\" % dest_uri)
+		return
+	dst.store_buffer(bytes)
+	dst.close()
+
+	print(\"[Inkodot]: Exported %s → %s\" % [source.get_file(), dest_uri])
+
+
+## Reads the file behind `src_uri`, copies its bytes into the workspace
+## folder, refreshes the tree, and selects the new entry.
+##
+## If a file with the same name already exists in the workspace, a numeric
+## suffix is appended (\"name (2).ink\") rather than overwriting.
+func _copy_uri_into_workspace(src_uri: String) -> bool:
+	var src := FileAccess.open(src_uri, FileAccess.READ)
+	if not src:
+		push_warning(\"[Inkodot]: Could not open %s\" % src_uri)
+		return false
+
+	var bytes := src.get_buffer(src.get_length())
+	src.close()
+
+	var fname := _extract_filename_from_uri(src_uri)
+	if not fname.ends_with(\".ink\"):
+		fname += \".ink\"
+
+	var dest_dir: String = %CodeEdit.MainFolder
+	if dest_dir.is_empty() or not DirAccess.dir_exists_absolute(dest_dir):
+		push_warning(\"[Inkodot]: Workspace folder is not available.\")
+		return false
+
+	var dest := dest_dir.path_join(fname)
+
+	if FileAccess.file_exists(dest):
+		var stem := fname.get_basename()
+		var ext := fname.get_extension()
+		var n := 2
+		while FileAccess.file_exists(dest) and n <= 100:
+			fname = \"%s (%d).%s\" % [stem, n, ext]
+			dest = dest_dir.path_join(fname)
+			n += 1
+
+		if n > 100:
+			push_warning(\"[Inkodot]: Too many files with that name already.\")
+			return false
+
+	var dst := FileAccess.open(dest, FileAccess.WRITE)
+	if not dst:
+		push_warning(\"[Inkodot]: Could not write to %s\" % dest)
+		return false
+	dst.store_buffer(bytes)
+	dst.close()
+
+	%FileTree.regenerate_tree()
+
+	var new_item := %FileTree.find_item_by_path(dest) as TreeItem
+	if new_item:
+		new_item.select(0)
+
+	print(\"[Inkodot]: Imported %s → %s\" % [src_uri, dest])
+	return true
+
+
+## Extracts a plausible filename from a content:// or file:// URI. Falls
+## back to \"imported.ink\" if nothing usable is found.
+func _extract_filename_from_uri(uri: String) -> String:
+	var u := uri.replace(\"\\\\\", \"/\")
+
+	# Strip query parameters (SAF sometimes appends them).
+	var q := u.find(\"?\")
+	if q >= 0:
+		u = u.substr(0, q)
+
+	var slash := u.rfind(\"/\")
+	var name := u.substr(slash + 1) if slash >= 0 else u
+
+	name = name.uri_decode()
+
+	# SAF \"document IDs\" can be long hashes with no extension — reject those
+	# and let the caller fall back.
+	if name.length() > 128 or name.is_empty():
+		name = \"imported.ink\"
+
+	return name
+
+#endregion
+"
+
+[sub_resource type="GDScript" id="GDScript_cnk3w"]
+resource_name = "Search button"
+script/source = "extends Button
+
+
+func _pressed() -> void:
+	if !%SearchPopup.visible: %SearchPopup.open_with_focus()
+	else: %SearchPopup.hide()
+"
+
+[sub_resource type="LabelSettings" id="LabelSettings_e8xbx"]
+font_size = 12
+
+[sub_resource type="LabelSettings" id="LabelSettings_drkxy"]
+font_size = 12
+font_color = Color(0.50140655, 0.5014065, 0.5014065, 1)
+
+[sub_resource type="GDScript" id="GDScript_telvs"]
+resource_name = "VersionLabel"
+script/source = "@tool
+extends Label
+
+func _ready() -> void:
+	text = \"v\" + ProjectSettings.get_setting(\"application/config/version\", \"\")
+"
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_e8xbx"]
+bg_color = Color(0.103743516, 0.103743546, 0.10374347, 1)
+
+[sub_resource type="GDScript" id="GDScript_cevi5"]
+script/source = "@tool
+extends Tree
+
+@export var hide_empty := true
+
+var popup_menu: PopupMenu
+var _new_file_target_dir := \"\"
+var _new_folder_target_dir := \"\"
+var _rename_file_original_path := \"\"
+var _rename_folder_original_path := \"\"
+var _pending_delete_action: Callable = Callable()
+
+enum types { DIR, FILE }
+
+enum id_list { 
+	DISCARD = 1, 
+	SAVE, 
+	DELETE_FILE, 
+	NEW_FILE,
+	NEW_FOLDER,
+	RENAME_FILE,
+	RENAME_FOLDER,
+	DELETE_FOLDER,
+	EXPAND_ALL,
+	EXPAND_ONE_LEVEL,
+	COLLAPSE_CHILDREN,
+	COLLAPSE_ALL,
+}
+
+func _ready():
+	## Tree signals
+	item_selected.connect(_on_selected)
+	item_collapsed.connect(_on_collapsed)
+	%CodeEdit.text_changed.connect(func(): check_save_status(get_selected()))
+
+	## New File / New Folder popups
+	%CreateNewFileButton.pressed.connect(_on_create_new_file_pressed)
+	%CreateNewFolderButton.pressed.connect(_on_create_new_folder_pressed)
+	%CreateNewFileLineEdit.text_changed.connect(_refresh_new_file_button_state)
+	%CreateNewFolderLineEdit.text_changed.connect(_refresh_new_folder_button_state)
+
+	## Rename popups
+	%RenameFileButton.pressed.connect(_on_rename_file_pressed)
+	%RenameFolderButton.pressed.connect(_on_rename_folder_pressed)
+	%RenameFileLineEdit.text_changed.connect(_refresh_rename_file_button_state)
+	%RenameFolderLineEdit.text_changed.connect(_refresh_rename_folder_button_state)
+
+	## Shared delete-confirmation dialog
+	%DeleteConfirmationDialog.confirmed.connect(_on_delete_dialog_confirmed)
+	%DeleteConfirmationDialog.visibility_changed.connect(_on_delete_dialog_visibility_changed)
+
+	# Initial state — buttons should start disabled.
+	_refresh_new_file_button_state()
+	_refresh_new_folder_button_state()
+	_refresh_rename_file_button_state()
+	_refresh_rename_folder_button_state()
+
+	# Defer: the parent InkEditor sets MainFolder in its own _Ready(), which
+	# runs *after* this one. Waiting one frame lets us read the final value.
+	regenerate_tree.call_deferred()
+
+	%CodeEdit.SaveStateModified.connect(update_all_save_states)
+
+func regenerate_tree():
+	var root_dir = %CodeEdit.MainFolder
+	if OS.has_feature(\"debug\"): 
+		print(\"[Inkodot] regenerate_tree, MainFolder = '\", root_dir, \"'\")
+	clear()
+	add_nested_dir(root_dir, null)
+
+func update_all_save_states():
+	var root = get_root()
+	await check_save_state_recursive(root)
+
+func check_save_state_recursive(item: TreeItem):
+	var children := item.get_children()
+	
+	for child in children:
+		if not child: continue
+		if child is not TreeItem: continue
+		
+		if child.get_metadata(0)[\"type\"] == types.FILE: 
+			check_save_status(child)
+		
+		check_save_state_recursive(child)
+		await get_tree().process_frame
+
+func add_nested_dir(dir: String, parent_item: TreeItem):
+	var directories = DirAccess.get_directories_at(dir)
+	var files = DirAccess.get_files_at(dir)
+	
+	var item: TreeItem
+	
+	if parent_item:
+		item = parent_item.create_child()
+	else:
+		item = create_item()
+	
+	item.set_metadata(0, {\"path\": dir, \"type\": types.DIR})
+	item.set_text(0, \"📁%s\" % dir.get_file())
+	
+	for _dir in directories: add_nested_dir(dir.path_join(_dir), item)
+	
+	for file in files: add_file(dir.path_join(file), item)
+	
+	_on_collapsed(item)
+	
+	if hide_empty and item.get_child_count() == 0: item.free()
+
+func add_file(file: String, parent_item: TreeItem):
+	if not file.ends_with(\".ink\"): return
+	var item: TreeItem
+	if parent_item:
+		item = parent_item.create_child()
+	else:
+		item = create_item()
+	
+	item.set_metadata(0, {\"path\": file, \"type\": types.FILE})
+	item.set_text(0, \"📄%s\" % file.get_file())
+	check_save_status(item)
+
+func _on_selected():
+	var item := get_selected()
+	if not is_instance_valid(item): return
+	var path: String = item.get_metadata(0)[\"path\"]
+	
+	if not path: return
+	if path.ends_with(\".ink\"):
+		%CodeEdit.SetNewFile(path)
+		%Title.text = path.get_file()
+		check_save_status(item)
+
+func _on_collapsed(item: TreeItem):
+	var text = item.get_text(0)
+	
+	if not text.begins_with(\"📁\") and not text.begins_with(\"📂\"): return
+	
+	if (item.is_any_collapsed() or item.get_child_count() == 0):
+		item.set_text(0, text.replace(\"📂\", \"📁\"))
+	else:
+		item.set_text(0, text.replace(\"📁\", \"📂\"))
+
+func check_save_status(item: TreeItem):
+	if not is_instance_valid(item): return
+	var path: String = item.get_metadata(0)[\"path\"]
+	
+	if not FileAccess.file_exists(path):
+		item.free()
+		return
+	
+	var is_changed := %CodeEdit.IsFileChanged(path) as bool
+	if is_changed:
+		item.set_text(0, \"📝 ~%s\" % path.get_file())
+		item.set_custom_color(0, Color.WHITE)
+	else:
+		item.set_text(0, \"📝 %s\" % path.get_file())
+		item.set_custom_color(0, Color.GRAY)
+
+
+#region Selection
+
+## Clears the current tree selection. Emits nothing on its own —
+## callers that need to react should check `get_selected()` afterwards.
+func clear_selection() -> void:
+	deselect_all()
+
+#endregion
+
+
+#region Folding
+
+## Recursively sets `collapsed` on `item` and every descendant, refreshing
+## each folder's 📁/📂 icon as it goes.
+func _set_subtree_collapsed(item: TreeItem, collapsed: bool) -> void:
+	item.collapsed = collapsed
+	_on_collapsed(item)
+	for child in item.get_children():
+		_set_subtree_collapsed(child, collapsed)
+
+## Opens `item`, collapses only its direct children. Deeper descendants
+## keep whatever collapsed-state they had previously.
+func _expand_one_level(item: TreeItem) -> void:
+	item.collapsed = false
+	_on_collapsed(item)
+	for child in item.get_children():
+		child.collapsed = true
+		_on_collapsed(child)
+
+## Keeps `item` open, recursively collapses everything below it.
+func _collapse_children(item: TreeItem) -> void:
+	item.collapsed = false
+	_on_collapsed(item)
+	for child in item.get_children():
+		_set_subtree_collapsed(child, true)
+
+#endregion
+
+
+#region Keyboard Shortcuts
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	if not (event is InputEventKey) or not event.pressed or event.echo:
+		return
+
+	# --- Escape : Clear selection ---
+	if event.keycode == KEY_ESCAPE and not event.ctrl_pressed \\
+			and not event.alt_pressed and not event.shift_pressed:
+		if get_selected():
+			clear_selection()
+			get_viewport().set_input_as_handled()
+		return
+
+	# --- Ctrl+S : Save currently selected file ---
+	if event.ctrl_pressed and event.keycode == KEY_S:
+		var path := get_selected_file_path()
+		if path.is_empty():
+			push_warning(\"[Ink Editor]: No .ink file selected to save.\")
+		else:
+			%CodeEdit.WriteFile(path)
+			check_save_status(get_selected())
+		get_viewport().set_input_as_handled()
+		return
+
+	# --- Ctrl+N : New file in selected dir (or parent dir of selected file) ---
+	if event.ctrl_pressed and event.keycode == KEY_N:
+		var dir := get_selected_target_dir()
+		if dir.is_empty():
+			push_warning(\"[Ink Editor]: No valid directory selected.\")
+		else:
+			open_new_file_dialog(dir)
+		get_viewport().set_input_as_handled()
+		return
+
+#endregion
+
+
+#region Selection Helpers
+
+## Returns the path of the selected item if it's a .ink file, otherwise \"\".
+func get_selected_file_path() -> String:
+	var item := get_selected()
+	if not is_instance_valid(item): return \"\"
+	
+	var meta: Dictionary = item.get_metadata(0)
+	if not meta or meta[\"type\"] != types.FILE: return \"\"
+	
+	var path := meta[\"path\"] as String
+	if not path.ends_with(\".ink\"): return \"\"
+	return path
+
+## Returns the directory new files should go into based on current selection:
+##  - DIR  -> that directory
+##  - FILE -> its parent directory
+##  - none -> MainFolder
+func get_selected_target_dir() -> String:
+	var item := get_selected()
+	
+	if not is_instance_valid(item):
+		return %CodeEdit.MainFolder
+	
+	var meta: Dictionary = item.get_metadata(0)
+	if not meta: return %CodeEdit.MainFolder
+	
+	var path := meta[\"path\"] as String
+	
+	if meta[\"type\"] == types.DIR:
+		return path
+	if meta[\"type\"] == types.FILE:
+		return path.get_base_dir()
+	
+	return %CodeEdit.MainFolder
+
+## Returns true if `child_path` lies strictly under `parent_dir`.
+func _is_path_under(child_path: String, parent_dir: String) -> bool:
+	if child_path.is_empty() or parent_dir.is_empty(): return false
+	return child_path.begins_with(parent_dir.rstrip(\"/\") + \"/\")
+
+#endregion
+
+
+#region Name Validation
+
+## Shared validator. `original_path` is \"\" for create, or the pre-rename
+## path (a same-name rename is treated as unchanged and rejected with a
+## friendly message). `ext` is \"\" for folders, \".ink\" for files.
+func _describe_name_problem(
+		raw_name: String,
+		dir: String,
+		ext: String,
+		original_path: String = \"\"
+	) -> String:
+
+	var name := raw_name.strip_edges()
+	if name.is_empty():
+		return \"Enter a name.\"
+
+	if not name.is_valid_filename():
+		return \"Name contains invalid characters.\"
+
+	if dir.is_empty() or not DirAccess.dir_exists_absolute(dir):
+		return \"Target folder does not exist.\"
+
+	var target := dir.path_join(name)
+	if not ext.is_empty() and not target.ends_with(ext):
+		target += ext
+
+	if not original_path.is_empty() and target == original_path:
+		return \"Name is unchanged.\"
+
+	if FileAccess.file_exists(target):
+		return \"A file named \\\"%s\\\" already exists here.\" % target.get_file()
+	if DirAccess.dir_exists_absolute(target):
+		return \"A folder named \\\"%s\\\" already exists here.\" % target.get_file()
+
+	return \"\"
+
+## Applies a problem string to a button + optional warning label.
+## Returns true if there was no problem (button enabled).
+func _apply_validation_problem(problem: String, button: Button, warning_label: Label) -> bool:
+	var ok := problem.is_empty()
+	button.disabled = not ok
+
+	if is_instance_valid(warning_label):
+		warning_label.text = problem
+		warning_label.visible = not ok
+
+	return ok
+
+#endregion
+
+
+#region New File / Folder / Rename Validation Refresh
+
+func _refresh_new_file_button_state(_new_text: String = \"\") -> void:
+	_apply_validation_problem(
+		_describe_name_problem(%CreateNewFileLineEdit.text, _new_file_target_dir, \".ink\"),
+		%CreateNewFileButton,
+		get_node_or_null(^\"%NewFileWarning\") as Label)
+
+func _refresh_new_folder_button_state(_new_text: String = \"\") -> void:
+	_apply_validation_problem(
+		_describe_name_problem(%CreateNewFolderLineEdit.text, _new_folder_target_dir, \"\"),
+		%CreateNewFolderButton,
+		get_node_or_null(^\"%NewFolderWarning\") as Label)
+
+func _refresh_rename_file_button_state(_new_text: String = \"\") -> void:
+	_apply_validation_problem(
+		_describe_name_problem(
+			%RenameFileLineEdit.text,
+			_rename_file_original_path.get_base_dir(),
+			\".ink\",
+			_rename_file_original_path),
+		%RenameFileButton,
+		get_node_or_null(^\"%RenameFileWarning\") as Label)
+
+func _refresh_rename_folder_button_state(_new_text: String = \"\") -> void:
+	_apply_validation_problem(
+		_describe_name_problem(
+			%RenameFolderLineEdit.text,
+			_rename_folder_original_path.get_base_dir(),
+			\"\",
+			_rename_folder_original_path),
+		%RenameFolderButton,
+		get_node_or_null(^\"%RenameFolderWarning\") as Label)
+
+#endregion
+
+
+#region Popup Openers
+
+func open_new_file_dialog(dir: String) -> void:
+	_new_file_target_dir = dir
+	_refresh_new_file_button_state()
+	%NewFilePopup.popup_centered()
+
+func open_new_folder_dialog(dir: String) -> void:
+	_new_folder_target_dir = dir
+	_refresh_new_folder_button_state()
+	%NewFolderPopup.popup_centered()
+
+func open_rename_file_dialog(path: String) -> void:
+	_rename_file_original_path = path
+	%RenameFileLineEdit.text = path.get_file().get_basename()
+	_refresh_rename_file_button_state()
+	%RenameFilePopup.popup_centered()
+
+func open_rename_folder_dialog(path: String) -> void:
+	_rename_folder_original_path = path
+	%RenameFolderLineEdit.text = path.get_file()
+	_refresh_rename_folder_button_state()
+	%RenameFolderPopup.popup_centered()
+
+func _on_create_new_file_pressed() -> void:
+	create_new_file(_new_file_target_dir)
+
+func _on_create_new_folder_pressed() -> void:
+	create_new_folder(_new_folder_target_dir)
+
+func _on_rename_file_pressed() -> void:
+	rename_file(_rename_file_original_path)
+
+func _on_rename_folder_pressed() -> void:
+	rename_folder(_rename_folder_original_path)
+
+#endregion
+
+
+#region Context Menu (right-click)
+
+## Adds a popup entry to `menu` whose click handler runs `action`.
+func _add_action_to(menu: PopupMenu, label: String, id: int, action: Callable) -> void:
+	menu.add_item(label, id)
+	menu.id_pressed.connect(
+		func(pressed_id: int):
+			if pressed_id == id:
+				action.call()
+	)
+
+## Builds a \"Folding\" submenu parented under `popup_menu`, targeting `item`.
+func _add_folding_submenu(item: TreeItem) -> void:
+	var fold_menu := PopupMenu.new()
+	popup_menu.add_child(fold_menu)                 # required before add_submenu_node_item
+	popup_menu.add_submenu_node_item(\"Folding\", fold_menu)
+
+	_add_action_to(fold_menu, \"Expand All\", id_list.EXPAND_ALL,
+		func(): _set_subtree_collapsed(item, false))
+
+	_add_action_to(fold_menu, \"Expand One Level\", id_list.EXPAND_ONE_LEVEL,
+		func(): _expand_one_level(item))
+
+	fold_menu.add_separator()
+
+	_add_action_to(fold_menu, \"Collapse Children\", id_list.COLLAPSE_CHILDREN,
+		func(): _collapse_children(item))
+
+	_add_action_to(fold_menu, \"Collapse All\", id_list.COLLAPSE_ALL,
+		func(): _set_subtree_collapsed(item, true))
+
+## Shared entries for both \"create in a directory\" cases (empty space → MainFolder,
+## or right-click on a folder). Keeps the two code paths in sync.
+func _add_create_entries(target_dir: String) -> void:
+	_add_action_to(popup_menu, \"New File\", id_list.NEW_FILE,
+		func(): open_new_file_dialog(target_dir))
+
+	_add_action_to(popup_menu, \"New Folder\", id_list.NEW_FOLDER,
+		func(): open_new_folder_dialog(target_dir))
+
+func _gui_input(event: InputEvent) -> void:
+	if not (event is InputEventMouseButton): return
+	if not event.pressed: return
+
+	# --- Left click on empty space: clear selection ---
+	if event.button_index == MOUSE_BUTTON_LEFT:
+		if get_item_at_position(event.position) == null and get_selected():
+			clear_selection()
+		return
+
+	# --- Right click: context menu ---
+	if event.button_index != MOUSE_BUTTON_RIGHT: return
+
+	var item = get_item_at_position(event.position)
+	restart_popup()
+
+	# Right-clicked empty space — offer create entries at MainFolder.
+	if item == null:
+		var root_dir: String = %CodeEdit.MainFolder
+		if root_dir.is_empty() or not DirAccess.dir_exists_absolute(root_dir):
+			return
+
+		_add_create_entries(root_dir)
+		popup_menu.popup_on_parent(Rect2(event.global_position, Vector2.ZERO))
+		return
+
+	# Select what we right-clicked, so all subsequent actions act on it
+	item.select(0)
+
+	var meta: Dictionary = item.get_metadata(0)
+	if not meta: return
+	var path := meta[\"path\"] as String
+
+	if meta[\"type\"] == types.DIR:
+		if not DirAccess.dir_exists_absolute(path): return
+
+		_add_create_entries(path)
+
+		popup_menu.add_separator()
+		_add_action_to(popup_menu, \"Rename Folder\", id_list.RENAME_FOLDER,
+			func(): open_rename_folder_dialog(path))
+
+		popup_menu.add_separator()
+		_add_folding_submenu(item)
+
+		popup_menu.add_separator()
+		_add_action_to(popup_menu, \"Delete Folder\", id_list.DELETE_FOLDER,
+			func(): _confirm_delete_folder(path))
+
+		# Deleting / renaming the root folder would break MainFolder — hide both.
+		if path == %CodeEdit.MainFolder:
+			popup_menu.set_item_disabled(
+				popup_menu.get_item_index(id_list.DELETE_FOLDER), true)
+			popup_menu.set_item_disabled(
+				popup_menu.get_item_index(id_list.RENAME_FOLDER), true)
+
+	if meta[\"type\"] == types.FILE:
+		var is_changed := %CodeEdit.IsFileChanged(path) as bool
+
+		## Save
+		popup_menu.add_item(\"Save Changes\", id_list.SAVE)
+		popup_menu.set_item_disabled(popup_menu.get_item_index(id_list.SAVE), not is_changed)
+		popup_menu.id_pressed.connect(func(id): if (id == id_list.SAVE): %CodeEdit.WriteFile(path); check_save_status(item))
+
+		## Discard
+		popup_menu.add_item(\"Discard Changes\", id_list.DISCARD)
+		popup_menu.set_item_disabled(popup_menu.get_item_index(id_list.DISCARD), not is_changed)
+		popup_menu.id_pressed.connect(func(id): if (id == id_list.DISCARD): %CodeEdit.RemoveFromCache(path); check_save_status(item))
+
+		## Rename
+		popup_menu.add_separator()
+		_add_action_to(popup_menu, \"Rename File\", id_list.RENAME_FILE,
+			func(): open_rename_file_dialog(path))
+
+		## Delete
+		_add_action_to(popup_menu, \"Delete File\", id_list.DELETE_FILE,
+			func(): _confirm_delete_file(path))
+
+	popup_menu.popup_on_parent(Rect2(event.global_position, Vector2.ZERO))
+
+#endregion
+
+
+#region Deletion
+
+## Runs `action` on the next `confirmed` from the shared dialog.
+## Any previous pending action (from a cancelled dialog) is discarded.
+func _confirm_then(action: Callable) -> void:
+	_pending_delete_action = action
+	%DeleteConfirmationDialog.popup_centered()
+
+func _confirm_delete_file(path: String) -> void:
+	_confirm_then(func(): _delete_file(path))
+
+func _confirm_delete_folder(path: String) -> void:
+	_confirm_then(func(): _delete_folder(path))
+
+func _on_delete_dialog_confirmed() -> void:
+	var action := _pending_delete_action
+	_pending_delete_action = Callable()
+	if action.is_valid():
+		action.call()
+
+func _on_delete_dialog_visibility_changed() -> void:
+	if %DeleteConfirmationDialog.visible: return
+	# AcceptDialog::_ok_pressed calls hide() *before* emitting `confirmed`,
+	# so we must defer clearing the pending action by one frame — otherwise
+	# the synchronous clear would kill the action before `confirmed` runs.
+	_clear_pending_delete_deferred.call_deferred()
+
+func _clear_pending_delete_deferred() -> void:
+	_pending_delete_action = Callable()
+
+func _delete_file(path: String) -> void:
+	# Remove any pending edits first — otherwise SaveSession would write the
+	# file back to disk on the next run.
+	%CodeEdit.RemoveFromCache(path)
+
+	var err := DirAccess.remove_absolute(path)
+	if err != OK:
+		push_warning(\"[Ink Editor]: Could not delete %s (error %d).\" % [path, err])
+		return
+
+	# If the currently-open file is the one we just deleted, clear the editor.
+	if %CodeEdit.FilePath == path:
+		%CodeEdit.ClearFile()
+
+	regenerate_tree()
+
+func _delete_folder(path: String) -> void:
+	if path.is_empty(): return
+	if not DirAccess.dir_exists_absolute(path): return
+	if path == %CodeEdit.MainFolder:
+		push_warning(\"[Ink Editor]: Refusing to delete the main folder.\")
+		return
+
+	_purge_save_cache_under(path)
+
+	var err := OS.move_to_trash(ProjectSettings.globalize_path(path))
+	if err != OK:
+		push_warning(\"[Ink Editor]: Could not move folder to trash: %s (error %d).\" % [path, err])
+		return
+
+	var current: String = %CodeEdit.FilePath
+	if not current.is_empty() and _is_path_under(current, path):
+		%CodeEdit.ClearFile()
+
+	regenerate_tree()
+
+## Drops any StoriesSaveCache entries whose path begins with `folder_path/`.
+func _purge_save_cache_under(folder_path: String) -> void:
+	var prefix := folder_path.rstrip(\"/\") + \"/\"
+	var cache: Dictionary = %CodeEdit.StoriesSaveCache
+
+	var to_remove: Array = []
+	for key in cache.keys():
+		if (key as String).begins_with(prefix):
+			to_remove.append(key)
+
+	for key in to_remove:
+		cache.erase(key)
+
+#endregion
+
+
+#region Rename
+
+func rename_file(old_path: String) -> void:
+	var new_name := (%RenameFileLineEdit.text as String).strip_edges()
+	if new_name.is_empty(): return
+
+	var dir := old_path.get_base_dir()
+	var new_path := dir.path_join(new_name)
+	if not new_path.ends_with(\".ink\"): new_path += \".ink\"
+
+	if new_path == old_path:
+		%RenameFilePopup.hide()
+		return
+
+	var err := DirAccess.rename_absolute(old_path, new_path)
+	if err != OK:
+		push_warning(\"[Ink Editor]: Could not rename %s (error %d).\" % [old_path, err])
+		return
+
+	# Remap the cache entry if the old path had unsaved edits.
+	var cache: Dictionary = %CodeEdit.StoriesSaveCache
+	if cache.has(old_path):
+		var cached = cache[old_path]
+		cache.erase(old_path)
+		cache[new_path] = cached
+
+	# If this file is open, repoint the editor at its new home.
+	if %CodeEdit.FilePath == old_path:
+		%CodeEdit.FilePath = new_path
+		%Title.text = new_path.get_file()
+
+	%RenameFilePopup.hide()
+	regenerate_tree()
+
+func rename_folder(old_path: String) -> void:
+	var new_name := (%RenameFolderLineEdit.text as String).strip_edges()
+	if new_name.is_empty(): return
+
+	var parent := old_path.get_base_dir()
+	var new_path := parent.path_join(new_name)
+
+	if new_path == old_path:
+		%RenameFolderPopup.hide()
+		return
+
+	var err := DirAccess.rename_absolute(old_path, new_path)
+	if err != OK:
+		push_warning(\"[Ink Editor]: Could not rename folder %s (error %d).\" % [old_path, err])
+		return
+
+	# Remap every cache entry under the old prefix.
+	_remap_save_cache_under(old_path, new_path)
+
+	# If the currently-open file lived under the old folder, remap its path too.
+	var current: String = %CodeEdit.FilePath
+	if not current.is_empty() and _is_path_under(current, old_path):
+		var relative := current.substr(old_path.length())
+		var new_current := new_path + relative
+		%CodeEdit.FilePath = new_current
+		%Title.text = new_current.get_file()
+
+	%RenameFolderPopup.hide()
+	regenerate_tree()
+
+## Moves every StoriesSaveCache key under `old_folder/` to `new_folder/...`.
+func _remap_save_cache_under(old_folder: String, new_folder: String) -> void:
+	var old_prefix := old_folder.rstrip(\"/\") + \"/\"
+	var new_prefix := new_folder.rstrip(\"/\") + \"/\"
+	var cache: Dictionary = %CodeEdit.StoriesSaveCache
+
+	# Snapshot keys first — we're mutating the dict inside the loop.
+	var to_remap: Array = []
+	for key in cache.keys():
+		if (key as String).begins_with(old_prefix):
+			to_remap.append(key)
+
+	for key in to_remap:
+		var value = cache[key]
+		cache.erase(key)
+		var new_key: String = new_prefix + (key as String).substr(old_prefix.length())
+		cache[new_key] = value
+
+#endregion
+
+
+#region File & Folder Creation
+
+func create_new_file(parent_dir: String):
+	var new_name := (%CreateNewFileLineEdit.text as String).strip_edges()
+	if new_name.is_empty(): return
+
+	var new_path := parent_dir.path_join(new_name)
+	if not new_path.ends_with(\".ink\"): new_path += \".ink\"
+
+	if FileAccess.file_exists(new_path):
+		push_warning(\"[Ink Editor]: %s already exists!\" % new_path)
+		return
+
+	var file = FileAccess.open(new_path, FileAccess.WRITE)
+	file.store_string(\"\")
+	file.close()
+
+	%NewFilePopup.hide()
+
+	regenerate_tree()
+
+	var new_item := find_item_by_path(new_path)
+	if new_item:
+		new_item.select(0)
+		scroll_to_item(new_item)
+	else:
+		%CodeEdit.SetNewFile(new_path)
+		%Title.text = new_path.get_file()
+
+func create_new_folder(parent_dir: String):
+	var new_name := (%CreateNewFolderLineEdit.text as String).strip_edges()
+	if new_name.is_empty(): return
+
+	var new_path := parent_dir.path_join(new_name)
+
+	var err := DirAccess.make_dir_absolute(new_path)
+	if err != OK:
+		push_warning(\"[Ink Editor]: Could not create folder %s (error %d).\" % [new_path, err])
+		return
+
+	%NewFolderPopup.hide()
+
+	regenerate_tree()
+
+	var new_item := find_item_by_path(new_path)
+	if new_item:
+		new_item.select(0)
+		scroll_to_item(new_item)
+
+func restart_popup():
+	if popup_menu: popup_menu.queue_free()
+	popup_menu = PopupMenu.new(); add_child(popup_menu)
+
+#endregion
+
+
+#region Tree Lookup
+
+func find_item_by_path(path: String) -> TreeItem:
+	var root := get_root()
+	if not root: return null
+	return _find_item_recursive(root, path)
+
+func _find_item_recursive(item: TreeItem, path: String) -> TreeItem:
+	var meta = item.get_metadata(0)
+	if meta is Dictionary and meta.get(\"path\", \"\") == path:
+		return item
+
+	for child in item.get_children():
+		var found := _find_item_recursive(child, path)
+		if found: return found
+
+	return null
+
+#endregion
+"
+
+[sub_resource type="GDScript" id="GDScript_yj2lj"]
+script/source = "@tool
+extends Tree
+
+var ink_syntax
+
+func _ready():
+	hide_root = true
+	update()
+	%CodeEdit.OnTextUpdated.connect(update)
+	ink_syntax = %CodeEdit.syntax_highlighter
+	item_selected.connect(_on_select)
+
+func update():
+	clear()
+	create_item()
+	var heading_regex := RegEx.create_from_string(\"^[\\\\s]*=+\\\\K.*$\")
+	var last_knot: TreeItem = null
+	for num in %CodeEdit.get_line_count():
+		var line := %CodeEdit.get_line(num) as String
+		if heading_regex.search(line) == null:
+			continue
+
+		var stripped_line := line.strip_edges().strip_escapes()
+		var item_text := stripped_line.replace(\"=\", \"\")
+
+		if stripped_line.begins_with(\"===\"):
+			# --- Knot: top-level, becomes the new parent for following stitches
+			item_text = \"➤\" + item_text
+			var item := get_root().create_child()
+			item.set_custom_color(0, ink_syntax.knot_color)
+			item.set_text(0, item_text)
+			item.set_metadata(0, num)
+			last_knot = item
+
+		else:
+			# --- Stitch: nested under the last knot if one exists, else at root
+			item_text = \"⤷\" + item_text
+			var item: TreeItem
+			if last_knot != null:
+				item = last_knot.create_child()
+			else:
+				item = get_root().create_child()
+			item.set_custom_color(0, ink_syntax.stitch_color)
+			item.set_text(0, item_text)
+			item.set_metadata(0, num)
+
+func _on_select():
+	var item := get_selected()
+	if item == null: return
+	var num = item.get_metadata(0)
+	if num == null: return
+	%CodeEdit.grab_focus()
+	%CodeEdit.set_caret_line(num)
+	var scroll = %CodeEdit.get_v_scroll_bar()
+	scroll.value = %CodeEdit.get_scroll_pos_for_line(num)
+	deselect_all()
+"
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_cnk3w"]
+
+[sub_resource type="GDScript" id="GDScript_767nh"]
+resource_name = "RestartButton"
+script/source = "@tool
+extends Button
+
+func _ready():
+	pressed.connect(
+			func(): 
+				%Dialogue.restart()
+				await get_tree().process_frame
+				%Dialogue.get_child(0).scroll_vertical = 0
+				);
+"
+
+[sub_resource type="GDScript" id="GDScript_66xdl"]
+resource_name = "BackButton"
+script/source = "@tool
+extends Button
+
+func _ready():
+	pressed.connect(_on_pressed);
+
+func _on_pressed():
+	var choices: PackedInt32Array = %CodeEdit.GetChoiceHistory()
+	var dialogue := %Dialogue as Control
+	
+	if (choices.size() == 0): 
+		return
+	
+	if (choices.size() == 1):
+		dialogue.restart()
+		return
+	
+	choices.remove_at(choices.size() - 1)
+	%CodeEdit.SetChoiceHistory(choices)
+	
+	dialogue.story.reset_runtime_state()
+	await get_tree().process_frame
+	dialogue.load_choices(dialogue.story, choices)
+"
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_yapq3"]
+content_margin_left = 5.0
+content_margin_top = 5.0
+content_margin_right = 5.0
+content_margin_bottom = 5.0
+bg_color = Color(0.1, 0.1, 0.1, 0.6)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 5
+
+[sub_resource type="GDScript" id="GDScript_yapq3"]
+script/source = "@tool
+extends RichTextLabel
+
+@export var code_edit: CodeEdit
+
+
+func _ready():
+	bbcode_enabled = true
+	meta_clicked.connect(_on_meta_clicked)
+	meta_hover_started.connect(_on_meta_hover_started)
+	meta_hover_ended.connect(_on_meta_hover_ended)
+
+	if not code_edit:
+		return
+	code_edit.OnTextUpdated.connect(_on_text_updated)
+	_on_text_updated()
+
+
+func _on_text_updated():
+	clear()
+	if not code_edit:
+		return
+
+	var errors: Dictionary = code_edit.Errors
+	for line in _sorted_keys(errors):
+		append_text(_format_entry(line, errors[line], \"red\"))
+
+	var warnings: Dictionary = code_edit.Warnings
+	for line in _sorted_keys(warnings):
+		append_text(_format_entry(line, warnings[line], \"yellow\"))
+
+
+## Builds one clickable line: \"20: Divert target not found\".
+## The meta payload of the [url] is the 1-based line number, which
+## _on_meta_clicked decodes and hands off to the code editor.
+func _format_entry(line: int, message: String, color: String) -> String:
+	var safe_msg := _escape_bbcode(message)
+	return \"[url=%d][color=%s][b]%d[/b]: %s[/color][/url]\\n\" % [
+		line, color, line, safe_msg]
+
+
+## Literal `[` in an ink message would otherwise be parsed as BBCode.
+func _escape_bbcode(s: String) -> String:
+	return s.replace(\"[\", \"[lb]\")
+
+
+func _sorted_keys(dict: Dictionary) -> Array:
+	var keys := dict.keys()
+	keys.sort()
+	return keys
+
+
+#region Click handling
+
+func _on_meta_clicked(meta: Variant) -> void:
+	var line := int(str(meta))
+	if line <= 0:
+		return
+	_goto_line(line)
+
+
+func _on_meta_hover_started(_meta: Variant) -> void:
+	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+
+
+func _on_meta_hover_ended(_meta: Variant) -> void:
+	mouse_default_cursor_shape = Control.CURSOR_ARROW
+
+
+## Jumps the caret to the given 1-based line in the code editor.
+## Errors dictionary stores 1-based line numbers, CodeEdit uses 0-based.
+func _goto_line(one_based_line: int) -> void:
+	if not is_instance_valid(code_edit):
+		return
+
+	var zero_based := clampi(one_based_line - 1, 0, code_edit.get_line_count() - 1)
+
+	code_edit.grab_focus()
+	code_edit.set_caret_line(zero_based)
+	code_edit.set_caret_column(0)
+	code_edit.center_viewport_to_caret()
+
+#endregion
+"
+
+[sub_resource type="GDScript" id="GDScript_e8xbx"]
+script/source = "@tool 
+extends RichTextLabel
+
+@export var code_edit: CodeEdit
+
+func _ready():
+	if not code_edit: return
+	code_edit.OnTextUpdated.connect(_on_text_updated)
+	_on_text_updated()
+
+func _on_text_updated():
+	text = \"\"
+	if not code_edit: return
+	if not code_edit.text: return
+	
+	var ink_text =  code_edit.text
+	
+	## Lines
+	append_text(\"Lines: %s\" % code_edit.get_line_count())
+	
+	## Words
+	append_text(\", \")
+	var word_regex := RegEx.create_from_string(\"\\\\w\")
+	var words = word_regex.search_all(ink_text)
+	append_text(\"Words: %s\" % words.size())
+	
+	## Knots
+	append_text(\", \")
+	var knot_regex := RegEx.create_from_string(\"(?m)^[\\\\s]*===.*$\")
+	var knots = knot_regex.search_all(ink_text)
+	append_text(\"Knots: %s\" % knots.size())
+	
+	## Stitches
+	append_text(\", \")
+	var stitch_regex := RegEx.create_from_string(\"(?m)^(?!\\\\s*==)\\\\h*?=.*$\")
+	var stitches = stitch_regex.search_all(ink_text)
+	append_text(\"Stitches: %s\" % stitches.size())
+	
+	## Errors
+	var errors := %CodeEdit.Errors as Dictionary
+	if not errors.is_empty():
+		append_text(\", \")
+		append_text(\"[color=red]Errors: %s[/color]\" % errors.size())
+	
+	## Warnings
+	var warnings := %CodeEdit.Warnings as Dictionary
+	if not warnings.is_empty():
+		append_text(\", \")
+		append_text(\"[color=yellow]Warnings: %s[/color]\" % warnings.size())
+"
+
+[sub_resource type="LabelSettings" id="LabelSettings_yj2lj"]
+font_size = 10
+font_color = Color(1, 0.7294118, 0.49411765, 1)
+
+[node name="Main" type="PanelContainer" unique_id=1504543320]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_drkxy")
+metadata/_edit_use_anchors_ = true
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1027083304]
+layout_mode = 2
+theme_override_constants/margin_left = 3
+theme_override_constants/margin_top = 3
+theme_override_constants/margin_right = 3
+theme_override_constants/margin_bottom = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=289723189]
+layout_mode = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Title" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=1647910186]
+layout_mode = 2
+
+[node name="MenuBar" type="MenuBar" parent="MarginContainer/VBoxContainer/Title" unique_id=1962956308]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+
+[node name="File" type="PopupMenu" parent="MarginContainer/VBoxContainer/Title/MenuBar" unique_id=96606163]
+oversampling_override = 1.0
+size = Vector2i(161, 151)
+item_count = 7
+item_0/text = "New File"
+item_0/id = 1
+item_1/text = "Open Folder"
+item_1/id = 2
+item_2/id = -1
+item_2/separator = true
+item_3/text = "Search"
+item_3/id = 3
+item_4/id = -1
+item_4/separator = true
+item_5/text = "Save Session"
+item_5/id = 4
+item_6/text = "Discard Session"
+item_6/id = 5
+script = SubResource("GDScript_aqlu3")
+
+[node name="Button" type="Button" parent="MarginContainer/VBoxContainer/Title" unique_id=1703944865]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Search"
+script = SubResource("GDScript_cnk3w")
+
+[node name="Title" type="Label" parent="MarginContainer/VBoxContainer/Title" unique_id=708499872]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Untitled"
+label_settings = SubResource("LabelSettings_e8xbx")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Version" type="Label" parent="MarginContainer/VBoxContainer/Title" unique_id=1855240386]
+unique_name_in_owner = true
+layout_mode = 2
+text = "v1.1.0"
+label_settings = SubResource("LabelSettings_drkxy")
+horizontal_alignment = 1
+vertical_alignment = 1
+script = SubResource("GDScript_telvs")
+
+[node name="MainPanel" type="VSplitContainer" parent="MarginContainer/VBoxContainer" unique_id=1982671027]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="TextContent" type="SplitContainer" parent="MarginContainer/VBoxContainer/MainPanel" unique_id=370953513]
+layout_mode = 2
+size_flags_vertical = 3
+metadata/_edit_use_anchors_ = true
+
+[node name="HBoxContainer" type="HSplitContainer" parent="MarginContainer/VBoxContainer/MainPanel/TextContent" unique_id=1930306303]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+metadata/_edit_use_anchors_ = true
+
+[node name="TreesContainer" type="VSplitContainer" parent="MarginContainer/VBoxContainer/MainPanel/TextContent/HBoxContainer" unique_id=1617646224]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.35
+
+[node name="FileTree" type="Tree" parent="MarginContainer/VBoxContainer/MainPanel/TextContent/HBoxContainer/TreesContainer" unique_id=1529332578]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/draw_guides = 1
+theme_override_constants/draw_relationship_lines = 1
+theme_override_constants/relationship_line_width = 1
+theme_override_constants/parent_hl_line_width = 3
+theme_override_constants/children_hl_line_width = 1
+theme_override_constants/parent_hl_line_margin = 1
+theme_override_styles/panel = SubResource("StyleBoxFlat_e8xbx")
+hide_root = true
+script = SubResource("GDScript_cevi5")
+hide_empty = false
+
+[node name="KnotTree" type="Tree" parent="MarginContainer/VBoxContainer/MainPanel/TextContent/HBoxContainer/TreesContainer" unique_id=286830475]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_e8xbx")
+hide_folding = true
+enable_recursive_folding = false
+enable_drag_unfolding = false
+hide_root = true
+script = SubResource("GDScript_yj2lj")
+
+[node name="VSplitContainer" type="VSplitContainer" parent="MarginContainer/VBoxContainer/MainPanel/TextContent/HBoxContainer" unique_id=517818052]
+layout_mode = 2
+size_flags_horizontal = 3
+split_offsets = PackedInt32Array(31)
+split_offset = 31
+
+[node name="PanelContainer" type="PanelContainer" parent="MarginContainer/VBoxContainer/MainPanel/TextContent/HBoxContainer/VSplitContainer" unique_id=861232361]
+visible = false
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_cnk3w")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/MainPanel/TextContent/HBoxContainer/VSplitContainer/PanelContainer" unique_id=341818686]
+layout_mode = 2
+
+[node name="LineEdit" type="LineEdit" parent="MarginContainer/VBoxContainer/MainPanel/TextContent/HBoxContainer/VSplitContainer/PanelContainer/HBoxContainer" unique_id=2092953024]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Search input..."
+
+[node name="SearchPrev" type="Button" parent="MarginContainer/VBoxContainer/MainPanel/TextContent/HBoxContainer/VSplitContainer/PanelContainer/HBoxContainer" unique_id=943504019]
+layout_mode = 2
+text = "Prev"
+
+[node name="SearchNext" type="Button" parent="MarginContainer/VBoxContainer/MainPanel/TextContent/HBoxContainer/VSplitContainer/PanelContainer/HBoxContainer" unique_id=651069883]
+layout_mode = 2
+text = "Next"
+
+[node name="SearchClose" type="Button" parent="MarginContainer/VBoxContainer/MainPanel/TextContent/HBoxContainer/VSplitContainer/PanelContainer/HBoxContainer" unique_id=112226703]
+layout_mode = 2
+text = "x"
+
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/MainPanel/TextContent/HBoxContainer/VSplitContainer/PanelContainer/HBoxContainer" unique_id=1397399786]
+layout_mode = 2
+
+[node name="CodeEdit" type="CodeEdit" parent="MarginContainer/VBoxContainer/MainPanel/TextContent/HBoxContainer/VSplitContainer" unique_id=903838472 node_paths=PackedStringArray("DialogueNode")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_fonts/font = ExtResource("1_wqaw2")
+theme_override_font_sizes/font_size = 13
+backspace_deletes_composite_character_enabled = true
+wrap_mode = 1
+indent_wrapped_lines = true
+scroll_smooth = true
+scroll_past_end_of_file = true
+minimap_draw = true
+caret_blink = true
+syntax_highlighter = ExtResource("2_pux6q")
+highlight_all_occurrences = true
+draw_control_chars = true
+draw_tabs = true
+draw_spaces = true
+line_folding = true
+gutters_draw_line_numbers = true
+gutters_draw_fold_gutter = true
+indent_use_spaces = true
+indent_automatic = true
+indent_automatic_prefixes = Array[String]([":", "{", "[", "(", "*", "-", "+"])
+auto_brace_completion_enabled = true
+auto_brace_completion_highlight_matching = true
+script = ExtResource("3_pppn0")
+MainFolder = "res://"
+DialogueNode = NodePath("../../../VBoxContainer/Dialogue")
+metadata/_edit_use_anchors_ = true
+
+[node name="SearchPopup" parent="MarginContainer/VBoxContainer/MainPanel/TextContent/HBoxContainer/VSplitContainer" unique_id=227811149 node_paths=PackedStringArray("code_edit") instance=ExtResource("4_lokl3")]
+unique_name_in_owner = true
+visible = false
+code_edit = NodePath("../CodeEdit")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/MainPanel/TextContent" unique_id=558623495]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="DialogueToolButtons" type="HBoxContainer" parent="MarginContainer/VBoxContainer/MainPanel/TextContent/VBoxContainer" unique_id=1952226107]
+layout_mode = 2
+
+[node name="Restart" type="Button" parent="MarginContainer/VBoxContainer/MainPanel/TextContent/VBoxContainer/DialogueToolButtons" unique_id=1147074505]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+theme_override_font_sizes/font_size = 10
+text = "Restart"
+icon = ExtResource("5_54cce")
+expand_icon = true
+script = SubResource("GDScript_767nh")
+
+[node name="Back" type="Button" parent="MarginContainer/VBoxContainer/MainPanel/TextContent/VBoxContainer/DialogueToolButtons" unique_id=597409775]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+theme_override_font_sizes/font_size = 10
+text = "Back"
+icon = ExtResource("6_54cce")
+expand_icon = true
+script = SubResource("GDScript_66xdl")
+
+[node name="Dialogue" parent="MarginContainer/VBoxContainer/MainPanel/TextContent/VBoxContainer" unique_id=1274912356 instance=ExtResource("4_e8xbx")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="InfoPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer/MainPanel" unique_id=1238686064]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.1
+theme_override_styles/panel = SubResource("StyleBoxFlat_yapq3")
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/VBoxContainer/MainPanel/InfoPanel" unique_id=1482054470]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/MainPanel/InfoPanel/ScrollContainer" unique_id=314842856]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ErrorLabel" type="RichTextLabel" parent="MarginContainer/VBoxContainer/MainPanel/InfoPanel/ScrollContainer/VBox" unique_id=52274676 node_paths=PackedStringArray("code_edit")]
+layout_mode = 2
+size_flags_vertical = 3
+focus_mode = 2
+theme_override_fonts/normal_font = ExtResource("1_wqaw2")
+theme_override_fonts/bold_font = ExtResource("5_e8xbx")
+theme_override_fonts/bold_italics_font = ExtResource("6_cevi5")
+theme_override_fonts/italics_font = ExtResource("7_yj2lj")
+theme_override_fonts/mono_font = ExtResource("1_wqaw2")
+theme_override_font_sizes/normal_font_size = 13
+theme_override_font_sizes/bold_font_size = 13
+theme_override_font_sizes/bold_italics_font_size = 13
+theme_override_font_sizes/italics_font_size = 13
+theme_override_font_sizes/mono_font_size = 13
+bbcode_enabled = true
+text = "[color=dim_gray]Line for errors...[/color]"
+fit_content = true
+selection_enabled = true
+script = SubResource("GDScript_yapq3")
+code_edit = NodePath("../../../../TextContent/HBoxContainer/VSplitContainer/CodeEdit")
+metadata/_edit_use_anchors_ = true
+
+[node name="LineCount" type="RichTextLabel" parent="MarginContainer/VBoxContainer" unique_id=775675516 node_paths=PackedStringArray("code_edit")]
+layout_mode = 2
+theme_override_colors/default_color = Color(0.42365062, 0.42365065, 0.42365062, 1)
+theme_override_fonts/normal_font = ExtResource("1_wqaw2")
+theme_override_fonts/bold_font = ExtResource("5_e8xbx")
+theme_override_fonts/bold_italics_font = ExtResource("6_cevi5")
+theme_override_fonts/italics_font = ExtResource("7_yj2lj")
+theme_override_fonts/mono_font = ExtResource("1_wqaw2")
+theme_override_font_sizes/normal_font_size = 12
+theme_override_font_sizes/bold_font_size = 12
+theme_override_font_sizes/bold_italics_font_size = 12
+theme_override_font_sizes/italics_font_size = 12
+theme_override_font_sizes/mono_font_size = 12
+bbcode_enabled = true
+fit_content = true
+horizontal_alignment = 2
+script = SubResource("GDScript_e8xbx")
+code_edit = NodePath("../MainPanel/TextContent/HBoxContainer/VSplitContainer/CodeEdit")
+
+[node name="OpenDialog" type="FileDialog" parent="." unique_id=72237044]
+unique_name_in_owner = true
+oversampling_override = 1.0
+position = Vector2i(0, 36)
+
+[node name="UnsavedConfirmationDialog" type="ConfirmationDialog" parent="." unique_id=1414992623]
+oversampling_override = 1.0
+position = Vector2i(0, 36)
+size = Vector2i(482, 100)
+force_native = true
+dialog_text = "You have unsaved progress! Are you sure you want to leave?"
+dialog_autowrap = true
+
+[node name="RenameFilePopup" type="Window" parent="." unique_id=671115080]
+unique_name_in_owner = true
+oversampling_override = 1.0
+title = "Creating new .Ink file"
+position = Vector2i(0, 36)
+size = Vector2i(360, 150)
+visible = false
+
+[node name="BoxContainer" type="BoxContainer" parent="RenameFilePopup" unique_id=1018262915]
+anchors_preset = -1
+anchor_left = 0.10277778
+anchor_right = 0.8972222
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+vertical = true
+metadata/_edit_use_anchors_ = true
+
+[node name="Label" type="Label" parent="RenameFilePopup/BoxContainer" unique_id=1612904333]
+layout_mode = 2
+text = "Enter new name (without .ink)"
+
+[node name="RenameFileWarning" type="Label" parent="RenameFilePopup/BoxContainer" unique_id=814918568]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Target folder does not exist."
+label_settings = SubResource("LabelSettings_yj2lj")
+
+[node name="RenameFileLineEdit" type="LineEdit" parent="RenameFilePopup/BoxContainer" unique_id=834230746]
+unique_name_in_owner = true
+layout_mode = 2
+text = "new_file"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="RenameFilePopup/BoxContainer" unique_id=1956643824]
+layout_mode = 2
+alignment = 1
+
+[node name="RenameFileButton" type="Button" parent="RenameFilePopup/BoxContainer/HBoxContainer" unique_id=2093639160]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Create"
+
+[node name="CancelButton" type="Button" parent="RenameFilePopup/BoxContainer/HBoxContainer" unique_id=1702799148]
+layout_mode = 2
+text = "Cancel"
+
+[node name="RenameFolderPopup" type="Window" parent="." unique_id=1251761941]
+unique_name_in_owner = true
+oversampling_override = 1.0
+title = "Creating new .Ink file"
+position = Vector2i(0, 36)
+size = Vector2i(360, 150)
+visible = false
+
+[node name="BoxContainer" type="BoxContainer" parent="RenameFolderPopup" unique_id=888310954]
+anchors_preset = -1
+anchor_left = 0.10277778
+anchor_right = 0.8972222
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+vertical = true
+metadata/_edit_use_anchors_ = true
+
+[node name="Label" type="Label" parent="RenameFolderPopup/BoxContainer" unique_id=864039680]
+layout_mode = 2
+text = "Enter new name (without .ink)"
+
+[node name="RenameFolderWarning" type="Label" parent="RenameFolderPopup/BoxContainer" unique_id=1670328301]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Target folder does not exist."
+label_settings = SubResource("LabelSettings_yj2lj")
+
+[node name="RenameFolderLineEdit" type="LineEdit" parent="RenameFolderPopup/BoxContainer" unique_id=1739349024]
+unique_name_in_owner = true
+layout_mode = 2
+text = "new_file"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="RenameFolderPopup/BoxContainer" unique_id=438646516]
+layout_mode = 2
+alignment = 1
+
+[node name="RenameFolderButton" type="Button" parent="RenameFolderPopup/BoxContainer/HBoxContainer" unique_id=1958848521]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Create"
+
+[node name="CancelButton" type="Button" parent="RenameFolderPopup/BoxContainer/HBoxContainer" unique_id=2029159149]
+layout_mode = 2
+text = "Cancel"
+
+[node name="NewFilePopup" type="Window" parent="." unique_id=1875384344]
+unique_name_in_owner = true
+oversampling_override = 1.0
+title = "Creating new .Ink file"
+position = Vector2i(0, 36)
+size = Vector2i(360, 150)
+visible = false
+
+[node name="BoxContainer" type="BoxContainer" parent="NewFilePopup" unique_id=504396806]
+anchors_preset = -1
+anchor_left = 0.10277778
+anchor_right = 0.8972222
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+vertical = true
+metadata/_edit_use_anchors_ = true
+
+[node name="Label" type="Label" parent="NewFilePopup/BoxContainer" unique_id=2032342965]
+layout_mode = 2
+text = "Enter new name (without .ink)"
+
+[node name="NewFileWarning" type="Label" parent="NewFilePopup/BoxContainer" unique_id=911154534]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Target folder does not exist."
+label_settings = SubResource("LabelSettings_yj2lj")
+
+[node name="CreateNewFileLineEdit" type="LineEdit" parent="NewFilePopup/BoxContainer" unique_id=1369986413]
+unique_name_in_owner = true
+layout_mode = 2
+text = "new_file"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="NewFilePopup/BoxContainer" unique_id=723215534]
+layout_mode = 2
+alignment = 1
+
+[node name="CreateNewFileButton" type="Button" parent="NewFilePopup/BoxContainer/HBoxContainer" unique_id=123032747]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Create"
+
+[node name="CancelButton" type="Button" parent="NewFilePopup/BoxContainer/HBoxContainer" unique_id=340315274]
+layout_mode = 2
+text = "Cancel"
+
+[node name="NewFolderPopup" type="Window" parent="." unique_id=1340980926]
+unique_name_in_owner = true
+oversampling_override = 1.0
+title = "Create new folder"
+position = Vector2i(0, 36)
+size = Vector2i(360, 150)
+visible = false
+
+[node name="BoxContainer" type="BoxContainer" parent="NewFolderPopup" unique_id=316284106]
+anchors_preset = -1
+anchor_left = 0.10277778
+anchor_right = 0.8972222
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+vertical = true
+metadata/_edit_use_anchors_ = true
+
+[node name="Label" type="Label" parent="NewFolderPopup/BoxContainer" unique_id=1874346132]
+layout_mode = 2
+text = "Enter new name"
+
+[node name="NewFolderWarning" type="Label" parent="NewFolderPopup/BoxContainer" unique_id=1102704512]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Target folder does not exist."
+label_settings = SubResource("LabelSettings_yj2lj")
+
+[node name="CreateNewFolderLineEdit" type="LineEdit" parent="NewFolderPopup/BoxContainer" unique_id=373481200]
+unique_name_in_owner = true
+layout_mode = 2
+text = "new_folder"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="NewFolderPopup/BoxContainer" unique_id=1399175592]
+layout_mode = 2
+alignment = 1
+
+[node name="CreateNewFolderButton" type="Button" parent="NewFolderPopup/BoxContainer/HBoxContainer" unique_id=1302127098]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Create"
+
+[node name="CancelButton" type="Button" parent="NewFolderPopup/BoxContainer/HBoxContainer" unique_id=454985182]
+layout_mode = 2
+text = "Cancel"
+
+[node name="DeleteConfirmationDialog" type="ConfirmationDialog" parent="." unique_id=163475816]
+unique_name_in_owner = true
+dialog_text = "Are you sure you want to delete this?"
+
+[connection signal="close_requested" from="RenameFilePopup" to="RenameFilePopup" method="hide"]
+[connection signal="pressed" from="RenameFilePopup/BoxContainer/HBoxContainer/CancelButton" to="RenameFilePopup" method="hide"]
+[connection signal="close_requested" from="RenameFolderPopup" to="RenameFolderPopup" method="hide"]
+[connection signal="pressed" from="RenameFolderPopup/BoxContainer/HBoxContainer/CancelButton" to="RenameFolderPopup" method="hide"]
+[connection signal="close_requested" from="NewFilePopup" to="NewFilePopup" method="hide"]
+[connection signal="pressed" from="NewFilePopup/BoxContainer/HBoxContainer/CancelButton" to="NewFilePopup" method="hide"]
+[connection signal="close_requested" from="NewFolderPopup" to="NewFolderPopup" method="hide"]
+[connection signal="pressed" from="NewFolderPopup/BoxContainer/HBoxContainer/CancelButton" to="NewFolderPopup" method="hide"]
+[connection signal="canceled" from="DeleteConfirmationDialog" to="DeleteConfirmationDialog" method="hide"]
+
+[editable path="MarginContainer/VBoxContainer/MainPanel/TextContent/HBoxContainer/VSplitContainer/SearchPopup"]
