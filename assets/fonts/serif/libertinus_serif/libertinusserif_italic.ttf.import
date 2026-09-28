@@ -3,12 +3,12 @@
 importer="font_data_dynamic"
 type="FontFile"
 uid="uid://bjdc0slou7esm"
-path="res://.godot/imported/libertinusserif_italic.ttf-d84c45ec9f0ccc8c55d77549f18cd86f.fontdata"
+path="res://.godot/imported/libertinusserif_italic.ttf-3319d22cf458b4e5fca63ff129257a88.fontdata"
 
 [deps]
 
-source_file="res://addons/inkodot_editor/assets/fonts/serif/libertinus_serif/libertinusserif_italic.ttf"
-dest_files=["res://.godot/imported/libertinusserif_italic.ttf-d84c45ec9f0ccc8c55d77549f18cd86f.fontdata"]
+source_file="res://addons/inkodot_editor_plugin/assets/fonts/serif/libertinus_serif/libertinusserif_italic.ttf"
+dest_files=["res://.godot/imported/libertinusserif_italic.ttf-3319d22cf458b4e5fca63ff129257a88.fontdata"]
 
 [params]
 

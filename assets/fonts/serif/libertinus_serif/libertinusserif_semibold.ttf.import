@@ -3,12 +3,12 @@
 importer="font_data_dynamic"
 type="FontFile"
 uid="uid://dl2i6ttcjvgvd"
-path="res://.godot/imported/libertinusserif_semibold.ttf-121d1ec00419b3c66772166f92aeb616.fontdata"
+path="res://.godot/imported/libertinusserif_semibold.ttf-e2c3ae98ad3b70e5a016799b46d67369.fontdata"
 
 [deps]
 
-source_file="res://addons/inkodot_editor/assets/fonts/serif/libertinus_serif/libertinusserif_semibold.ttf"
-dest_files=["res://.godot/imported/libertinusserif_semibold.ttf-121d1ec00419b3c66772166f92aeb616.fontdata"]
+source_file="res://addons/inkodot_editor_plugin/assets/fonts/serif/libertinus_serif/libertinusserif_semibold.ttf"
+dest_files=["res://.godot/imported/libertinusserif_semibold.ttf-e2c3ae98ad3b70e5a016799b46d67369.fontdata"]
 
 [params]
 

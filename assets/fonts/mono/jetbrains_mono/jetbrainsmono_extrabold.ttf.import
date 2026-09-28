@@ -3,12 +3,12 @@
 importer="font_data_dynamic"
 type="FontFile"
 uid="uid://um805bj5v6yy"
-path="res://.godot/imported/jetbrainsmono_extrabold.ttf-a1a5e85e7978b28ee826bf03a05883bd.fontdata"
+path="res://.godot/imported/jetbrainsmono_extrabold.ttf-532ea4c615e12f22435e4eeac3c5a79a.fontdata"
 
 [deps]
 
-source_file="res://addons/inkodot_editor/assets/fonts/mono/jetbrains_mono/jetbrainsmono_extrabold.ttf"
-dest_files=["res://.godot/imported/jetbrainsmono_extrabold.ttf-a1a5e85e7978b28ee826bf03a05883bd.fontdata"]
+source_file="res://addons/inkodot_editor_plugin/assets/fonts/mono/jetbrains_mono/jetbrainsmono_extrabold.ttf"
+dest_files=["res://.godot/imported/jetbrainsmono_extrabold.ttf-532ea4c615e12f22435e4eeac3c5a79a.fontdata"]
 
 [params]
 

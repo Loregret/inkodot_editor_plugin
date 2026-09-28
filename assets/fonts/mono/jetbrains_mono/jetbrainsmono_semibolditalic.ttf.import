@@ -3,12 +3,12 @@
 importer="font_data_dynamic"
 type="FontFile"
 uid="uid://dektp3wwfy2k7"
-path="res://.godot/imported/jetbrainsmono_semibolditalic.ttf-b57cf428159e8a27eb2c13f4a95a3f05.fontdata"
+path="res://.godot/imported/jetbrainsmono_semibolditalic.ttf-3aee498cb7c9b1d204195b22a817a70d.fontdata"
 
 [deps]
 
-source_file="res://addons/inkodot_editor/assets/fonts/mono/jetbrains_mono/jetbrainsmono_semibolditalic.ttf"
-dest_files=["res://.godot/imported/jetbrainsmono_semibolditalic.ttf-b57cf428159e8a27eb2c13f4a95a3f05.fontdata"]
+source_file="res://addons/inkodot_editor_plugin/assets/fonts/mono/jetbrains_mono/jetbrainsmono_semibolditalic.ttf"
+dest_files=["res://.godot/imported/jetbrainsmono_semibolditalic.ttf-3aee498cb7c9b1d204195b22a817a70d.fontdata"]
 
 [params]
 

@@ -3,12 +3,12 @@
 importer="font_data_dynamic"
 type="FontFile"
 uid="uid://du5pgrnuvy2k8"
-path="res://.godot/imported/inter_24pt_blackitalic.ttf-9398078defc610cd2c7fe135ec520e5c.fontdata"
+path="res://.godot/imported/inter_24pt_blackitalic.ttf-63bf2fb7f67e7e0ed1414479e1f248d9.fontdata"
 
 [deps]
 
-source_file="res://addons/inkodot_editor/assets/fonts/sans/inter/inter_24pt_blackitalic.ttf"
-dest_files=["res://.godot/imported/inter_24pt_blackitalic.ttf-9398078defc610cd2c7fe135ec520e5c.fontdata"]
+source_file="res://addons/inkodot_editor_plugin/assets/fonts/sans/inter/inter_24pt_blackitalic.ttf"
+dest_files=["res://.godot/imported/inter_24pt_blackitalic.ttf-63bf2fb7f67e7e0ed1414479e1f248d9.fontdata"]
 
 [params]
 

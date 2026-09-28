@@ -3,12 +3,12 @@
 importer="font_data_dynamic"
 type="FontFile"
 uid="uid://bvtigbtxw58ko"
-path="res://.godot/imported/ptserif_regular.ttf-ae07d6aa484554d0b74628dd1f687702.fontdata"
+path="res://.godot/imported/ptserif_regular.ttf-5f05240ff969d4eed2cfa6d66f5aec5b.fontdata"
 
 [deps]
 
-source_file="res://addons/inkodot_editor/assets/fonts/serif/pt_serif/ptserif_regular.ttf"
-dest_files=["res://.godot/imported/ptserif_regular.ttf-ae07d6aa484554d0b74628dd1f687702.fontdata"]
+source_file="res://addons/inkodot_editor_plugin/assets/fonts/serif/pt_serif/ptserif_regular.ttf"
+dest_files=["res://.godot/imported/ptserif_regular.ttf-5f05240ff969d4eed2cfa6d66f5aec5b.fontdata"]
 
 [params]
 

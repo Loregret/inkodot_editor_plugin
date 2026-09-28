@@ -3,12 +3,12 @@
 importer="font_data_dynamic"
 type="FontFile"
 uid="uid://rocmgvn7mnld"
-path="res://.godot/imported/inter_24pt_semibold.ttf-c6b9f9ae803cb5275e65a627154f1c16.fontdata"
+path="res://.godot/imported/inter_24pt_semibold.ttf-338fa722e394895aaa7593cc2a519c2e.fontdata"
 
 [deps]
 
-source_file="res://addons/inkodot_editor/assets/fonts/sans/inter/inter_24pt_semibold.ttf"
-dest_files=["res://.godot/imported/inter_24pt_semibold.ttf-c6b9f9ae803cb5275e65a627154f1c16.fontdata"]
+source_file="res://addons/inkodot_editor_plugin/assets/fonts/sans/inter/inter_24pt_semibold.ttf"
+dest_files=["res://.godot/imported/inter_24pt_semibold.ttf-338fa722e394895aaa7593cc2a519c2e.fontdata"]
 
 [params]
 

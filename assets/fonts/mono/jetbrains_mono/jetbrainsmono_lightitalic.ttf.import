@@ -3,12 +3,12 @@
 importer="font_data_dynamic"
 type="FontFile"
 uid="uid://dvlfhk0fhqdb1"
-path="res://.godot/imported/jetbrainsmono_lightitalic.ttf-29f74c6e51414008ddb581a87bdcfa6e.fontdata"
+path="res://.godot/imported/jetbrainsmono_lightitalic.ttf-b4d154d3ccc3db9ca810c3a73dfd9822.fontdata"
 
 [deps]
 
-source_file="res://addons/inkodot_editor/assets/fonts/mono/jetbrains_mono/jetbrainsmono_lightitalic.ttf"
-dest_files=["res://.godot/imported/jetbrainsmono_lightitalic.ttf-29f74c6e51414008ddb581a87bdcfa6e.fontdata"]
+source_file="res://addons/inkodot_editor_plugin/assets/fonts/mono/jetbrains_mono/jetbrainsmono_lightitalic.ttf"
+dest_files=["res://.godot/imported/jetbrainsmono_lightitalic.ttf-b4d154d3ccc3db9ca810c3a73dfd9822.fontdata"]
 
 [params]
 

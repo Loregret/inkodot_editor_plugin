@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://vx4ef8sv4l26"
-path="res://.godot/imported/double_arrow_down.svg-f0cde164b77ffde442ebb9b55ccdd3f2.ctex"
+path="res://.godot/imported/double_arrow_down.svg-38c897a67b931fd352b445fa065ba143.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://addons/inkodot_editor/assets/icons/gui/double_arrow_down.svg"
-dest_files=["res://.godot/imported/double_arrow_down.svg-f0cde164b77ffde442ebb9b55ccdd3f2.ctex"]
+source_file="res://addons/inkodot_editor_plugin/assets/icons/gui/double_arrow_down.svg"
+dest_files=["res://.godot/imported/double_arrow_down.svg-38c897a67b931fd352b445fa065ba143.ctex"]
 
 [params]
 

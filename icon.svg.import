@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://mhdwjl1ydy8n"
-path="res://.godot/imported/TextFormatter.svg-36c8d1b05900dacbdbd2513471f1fa47.ctex"
+uid="uid://mpaybt3b05px"
+path="res://.godot/imported/icon.svg-9972255698d4a9ee10dd890c0123f940.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://addons/inkodot_editor/text_formatter/TextFormatter.svg"
-dest_files=["res://.godot/imported/TextFormatter.svg-36c8d1b05900dacbdbd2513471f1fa47.ctex"]
+source_file="res://addons/inkodot_editor_plugin/icon.svg"
+dest_files=["res://.godot/imported/icon.svg-9972255698d4a9ee10dd890c0123f940.ctex"]
 
 [params]
 
@@ -23,7 +23,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=true
+mipmaps/generate=false
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""

@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://2vdedtcw3r5p"
-path="res://.godot/imported/search.svg-8d74f7f196329733364a721d2540c3a0.ctex"
+path="res://.godot/imported/search.svg-900cab27e54c659fcf1e28d53065d021.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://addons/inkodot_editor/assets/icons/gui/search.svg"
-dest_files=["res://.godot/imported/search.svg-8d74f7f196329733364a721d2540c3a0.ctex"]
+source_file="res://addons/inkodot_editor_plugin/assets/icons/gui/search.svg"
+dest_files=["res://.godot/imported/search.svg-900cab27e54c659fcf1e28d53065d021.ctex"]
 
 [params]
 

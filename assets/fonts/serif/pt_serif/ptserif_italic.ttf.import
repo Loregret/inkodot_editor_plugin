@@ -3,12 +3,12 @@
 importer="font_data_dynamic"
 type="FontFile"
 uid="uid://b3idqgq72npx6"
-path="res://.godot/imported/ptserif_italic.ttf-18f7a4a3a44d5bd51c5230b5f7795a4a.fontdata"
+path="res://.godot/imported/ptserif_italic.ttf-9d30727327069b58ece46a6c0404f192.fontdata"
 
 [deps]
 
-source_file="res://addons/inkodot_editor/assets/fonts/serif/pt_serif/ptserif_italic.ttf"
-dest_files=["res://.godot/imported/ptserif_italic.ttf-18f7a4a3a44d5bd51c5230b5f7795a4a.fontdata"]
+source_file="res://addons/inkodot_editor_plugin/assets/fonts/serif/pt_serif/ptserif_italic.ttf"
+dest_files=["res://.godot/imported/ptserif_italic.ttf-9d30727327069b58ece46a6c0404f192.fontdata"]
 
 [params]
 
