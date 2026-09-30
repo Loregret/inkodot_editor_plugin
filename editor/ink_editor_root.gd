@@ -2,6 +2,8 @@
 extends PanelContainer
 
 func _shortcut_input(event: InputEvent) -> void:
+	if not is_visible_in_tree(): return
+	
 	if not (event is InputEventKey) or not event.pressed or event.echo:
 		return
 	

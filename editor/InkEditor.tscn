@@ -1,16 +1,16 @@
 [gd_scene format=3 uid="uid://e7n1blit5uca"]
 
-[ext_resource type="Script" uid="uid://bkh2103o4nwd5" path="res://addons/inkodot_editor/editor/ink_editor_root.gd" id="1_drkxy"]
-[ext_resource type="FontFile" uid="uid://bvm1mx6uw335n" path="res://addons/inkodot_editor/assets/fonts/mono/jetbrains_mono/jetbrainsmono_light.ttf" id="1_wqaw2"]
-[ext_resource type="SyntaxHighlighter" uid="uid://bammdbah3vl60" path="res://addons/inkodot_editor/syntax/ink_syntax_highlighter.tres" id="2_pux6q"]
-[ext_resource type="Script" uid="uid://b8ftvtj8sjshd" path="res://addons/inkodot_editor/editor/InkEditor.cs" id="3_pppn0"]
-[ext_resource type="PackedScene" uid="uid://8kb5qsfatcxy" path="res://addons/inkodot_editor/dialogue/editor_dialogue.tscn" id="4_e8xbx"]
-[ext_resource type="PackedScene" uid="uid://bisdqn1c1dv1m" path="res://addons/inkodot_editor/search_popup/search_popup.tscn" id="4_lokl3"]
-[ext_resource type="Texture2D" uid="uid://c0oqjcidhjrmi" path="res://addons/inkodot_editor/assets/icons/gui/restart.svg" id="5_54cce"]
-[ext_resource type="FontFile" uid="uid://cn66q2u35f5oh" path="res://addons/inkodot_editor/assets/fonts/mono/jetbrains_mono/jetbrainsmono_bold.ttf" id="5_e8xbx"]
-[ext_resource type="Texture2D" uid="uid://buwgt770c7to4" path="res://addons/inkodot_editor/assets/icons/gui/back.svg" id="6_54cce"]
-[ext_resource type="FontFile" uid="uid://doaeiw57pwvwg" path="res://addons/inkodot_editor/assets/fonts/mono/jetbrains_mono/jetbrainsmono_bolditalic.ttf" id="6_cevi5"]
-[ext_resource type="FontFile" uid="uid://bd70hx8p0e0xl" path="res://addons/inkodot_editor/assets/fonts/mono/jetbrains_mono/jetbrainsmono_italic.ttf" id="7_yj2lj"]
+[ext_resource type="Script" uid="uid://bkh2103o4nwd5" path="res://addons/inkodot_editor_plugin/editor/ink_editor_root.gd" id="1_drkxy"]
+[ext_resource type="FontFile" uid="uid://bvm1mx6uw335n" path="res://assets/fonts/mono/jetbrains_mono/jetbrainsmono_light.ttf" id="1_wqaw2"]
+[ext_resource type="SyntaxHighlighter" uid="uid://bammdbah3vl60" path="res://addons/inkodot_editor_plugin/syntax/ink_syntax_highlighter.tres" id="2_pux6q"]
+[ext_resource type="Script" uid="uid://b8ftvtj8sjshd" path="res://addons/inkodot_editor_plugin/editor/InkEditor.cs" id="3_pppn0"]
+[ext_resource type="PackedScene" uid="uid://8kb5qsfatcxy" path="res://addons/inkodot_editor_plugin/dialogue/editor_dialogue.tscn" id="4_e8xbx"]
+[ext_resource type="PackedScene" uid="uid://bisdqn1c1dv1m" path="res://addons/inkodot_editor_plugin/search_popup/search_popup.tscn" id="4_lokl3"]
+[ext_resource type="Texture2D" uid="uid://c0oqjcidhjrmi" path="res://assets/icons/gui/restart.svg" id="5_54cce"]
+[ext_resource type="FontFile" uid="uid://cn66q2u35f5oh" path="res://assets/fonts/mono/jetbrains_mono/jetbrainsmono_bold.ttf" id="5_e8xbx"]
+[ext_resource type="Texture2D" uid="uid://buwgt770c7to4" path="res://assets/icons/gui/back.svg" id="6_54cce"]
+[ext_resource type="FontFile" uid="uid://doaeiw57pwvwg" path="res://assets/fonts/mono/jetbrains_mono/jetbrainsmono_bolditalic.ttf" id="6_cevi5"]
+[ext_resource type="FontFile" uid="uid://bd70hx8p0e0xl" path="res://assets/fonts/mono/jetbrains_mono/jetbrainsmono_italic.ttf" id="7_yj2lj"]
 
 [sub_resource type="GDScript" id="GDScript_aqlu3"]
 script/source = "@tool
@@ -184,7 +184,7 @@ func _on_export_file_chosen(status: bool, selected_paths: PackedStringArray, _fi
 	dst.store_buffer(bytes)
 	dst.close()
 
-	print(\"[Inkodot]: Exported %s → %s\" % [source.get_file(), dest_uri])
+	#print(\"[Inkodot]: Exported %s → %s\" % [source.get_file(), dest_uri])
 
 
 ## Reads the file behind `src_uri`, copies its bytes into the workspace
@@ -238,7 +238,7 @@ func _copy_uri_into_workspace(src_uri: String) -> bool:
 	if new_item:
 		new_item.select(0)
 
-	print(\"[Inkodot]: Imported %s → %s\" % [src_uri, dest])
+	#print(\"[Inkodot]: Imported %s → %s\" % [src_uri, dest])
 	return true
 
 
@@ -269,7 +269,8 @@ func _extract_filename_from_uri(uri: String) -> String:
 
 [sub_resource type="GDScript" id="GDScript_cnk3w"]
 resource_name = "Search button"
-script/source = "extends Button
+script/source = "@tool
+extends Button
 
 
 func _pressed() -> void:
@@ -277,21 +278,22 @@ func _pressed() -> void:
 	else: %SearchPopup.hide()
 "
 
-[sub_resource type="LabelSettings" id="LabelSettings_e8xbx"]
-font_size = 12
-
-[sub_resource type="LabelSettings" id="LabelSettings_drkxy"]
-font_size = 12
-font_color = Color(0.50140655, 0.5014065, 0.5014065, 1)
-
-[sub_resource type="GDScript" id="GDScript_telvs"]
-resource_name = "VersionLabel"
+[sub_resource type="GDScript" id="GDScript_207ca"]
 script/source = "@tool
-extends Label
+extends CheckBox
+
+@export var file_tree: Tree
 
 func _ready() -> void:
-	text = \"v\" + ProjectSettings.get_setting(\"application/config/version\", \"\")
+	set_pressed_no_signal(file_tree.hide_empty)
+
+func _toggled(toggled_on: bool) -> void:
+	file_tree.hide_empty = toggled_on
+	file_tree.regenerate_tree()
 "
+
+[sub_resource type="LabelSettings" id="LabelSettings_e8xbx"]
+font_size = 12
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_e8xbx"]
 bg_color = Color(0.103743516, 0.103743546, 0.10374347, 1)
@@ -362,8 +364,6 @@ func _ready():
 
 func regenerate_tree():
 	var root_dir = %CodeEdit.MainFolder
-	if OS.has_feature(\"debug\"): 
-		print(\"[Inkodot] regenerate_tree, MainFolder = '\", root_dir, \"'\")
 	clear()
 	add_nested_dir(root_dir, null)
 
@@ -404,7 +404,8 @@ func add_nested_dir(dir: String, parent_item: TreeItem):
 	
 	_on_collapsed(item)
 	
-	if hide_empty and item.get_child_count() == 0: item.free()
+	if hide_empty and item.get_child_count() == 0: 
+		item.free()
 
 func add_file(file: String, parent_item: TreeItem):
 	if not file.ends_with(\".ink\"): return
@@ -1130,8 +1131,6 @@ func _on_select():
 	deselect_all()
 "
 
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_cnk3w"]
-
 [sub_resource type="GDScript" id="GDScript_767nh"]
 resource_name = "RestartButton"
 script/source = "@tool
@@ -1359,21 +1358,17 @@ theme_override_font_sizes/font_size = 14
 [node name="File" type="PopupMenu" parent="MarginContainer/VBoxContainer/Title/MenuBar" unique_id=96606163]
 oversampling_override = 1.0
 size = Vector2i(161, 151)
-item_count = 7
+item_count = 5
 item_0/text = "New File"
 item_0/id = 1
 item_1/text = "Open Folder"
 item_1/id = 2
 item_2/id = -1
 item_2/separator = true
-item_3/text = "Search"
-item_3/id = 3
-item_4/id = -1
-item_4/separator = true
-item_5/text = "Save Session"
-item_5/id = 4
-item_6/text = "Discard Session"
-item_6/id = 5
+item_3/text = "Save Session"
+item_3/id = 5
+item_4/text = "Discard Session"
+item_4/id = 6
 script = SubResource("GDScript_aqlu3")
 
 [node name="Button" type="Button" parent="MarginContainer/VBoxContainer/Title" unique_id=1703944865]
@@ -1381,6 +1376,14 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "Search"
 script = SubResource("GDScript_cnk3w")
+
+[node name="HideEmptyToggle" type="CheckBox" parent="MarginContainer/VBoxContainer/Title" unique_id=1772550948 node_paths=PackedStringArray("file_tree")]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+button_pressed = true
+text = "Hide empty folders"
+script = SubResource("GDScript_207ca")
+file_tree = NodePath("../../MainPanel/TextContent/HBoxContainer/TreesContainer/FileTree")
 
 [node name="Title" type="Label" parent="MarginContainer/VBoxContainer/Title" unique_id=708499872]
 unique_name_in_owner = true
@@ -1390,15 +1393,6 @@ text = "Untitled"
 label_settings = SubResource("LabelSettings_e8xbx")
 horizontal_alignment = 1
 vertical_alignment = 1
-
-[node name="Version" type="Label" parent="MarginContainer/VBoxContainer/Title" unique_id=1855240386]
-unique_name_in_owner = true
-layout_mode = 2
-text = "v1.1.0"
-label_settings = SubResource("LabelSettings_drkxy")
-horizontal_alignment = 1
-vertical_alignment = 1
-script = SubResource("GDScript_telvs")
 
 [node name="MainPanel" type="VSplitContainer" parent="MarginContainer/VBoxContainer" unique_id=1982671027]
 layout_mode = 2
@@ -1435,7 +1429,6 @@ theme_override_constants/parent_hl_line_margin = 1
 theme_override_styles/panel = SubResource("StyleBoxFlat_e8xbx")
 hide_root = true
 script = SubResource("GDScript_cevi5")
-hide_empty = false
 
 [node name="KnotTree" type="Tree" parent="MarginContainer/VBoxContainer/MainPanel/TextContent/HBoxContainer/TreesContainer" unique_id=286830475]
 unique_name_in_owner = true
@@ -1453,34 +1446,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 split_offsets = PackedInt32Array(31)
 split_offset = 31
-
-[node name="PanelContainer" type="PanelContainer" parent="MarginContainer/VBoxContainer/MainPanel/TextContent/HBoxContainer/VSplitContainer" unique_id=861232361]
-visible = false
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxEmpty_cnk3w")
-
-[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/MainPanel/TextContent/HBoxContainer/VSplitContainer/PanelContainer" unique_id=341818686]
-layout_mode = 2
-
-[node name="LineEdit" type="LineEdit" parent="MarginContainer/VBoxContainer/MainPanel/TextContent/HBoxContainer/VSplitContainer/PanelContainer/HBoxContainer" unique_id=2092953024]
-layout_mode = 2
-size_flags_horizontal = 3
-placeholder_text = "Search input..."
-
-[node name="SearchPrev" type="Button" parent="MarginContainer/VBoxContainer/MainPanel/TextContent/HBoxContainer/VSplitContainer/PanelContainer/HBoxContainer" unique_id=943504019]
-layout_mode = 2
-text = "Prev"
-
-[node name="SearchNext" type="Button" parent="MarginContainer/VBoxContainer/MainPanel/TextContent/HBoxContainer/VSplitContainer/PanelContainer/HBoxContainer" unique_id=651069883]
-layout_mode = 2
-text = "Next"
-
-[node name="SearchClose" type="Button" parent="MarginContainer/VBoxContainer/MainPanel/TextContent/HBoxContainer/VSplitContainer/PanelContainer/HBoxContainer" unique_id=112226703]
-layout_mode = 2
-text = "x"
-
-[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/MainPanel/TextContent/HBoxContainer/VSplitContainer/PanelContainer/HBoxContainer" unique_id=1397399786]
-layout_mode = 2
 
 [node name="CodeEdit" type="CodeEdit" parent="MarginContainer/VBoxContainer/MainPanel/TextContent/HBoxContainer/VSplitContainer" unique_id=903838472 node_paths=PackedStringArray("DialogueNode")]
 unique_name_in_owner = true
@@ -1510,7 +1475,7 @@ indent_automatic_prefixes = Array[String]([":", "{", "[", "(", "*", "-", "+"])
 auto_brace_completion_enabled = true
 auto_brace_completion_highlight_matching = true
 script = ExtResource("3_pppn0")
-MainFolder = "res://"
+MainFolder = "C:/Users/Loregret/Documents/dreamiour/_scenarios"
 DialogueNode = NodePath("../../../VBoxContainer/Dialogue")
 metadata/_edit_use_anchors_ = true
 

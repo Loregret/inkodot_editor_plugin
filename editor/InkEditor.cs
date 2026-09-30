@@ -50,31 +50,19 @@ public sealed partial class InkEditor : CodeEdit
 
 	public override void _Ready()
 	{
-		if (Engine.IsEditorHint()) return;
+		// Plugin mode: restore the folder, then stop. Everything below this
+		// (project settings, menu wiring, demo extraction) is standalone-only.
+		if (Engine.IsEditorHint())
+		{
+			RestoreLastFolder();
+			return;
+		}
 
 		try
 		{
 			ProjectSettings.SetSetting("application/run/low_processor_mode", true);
 
-			// Resolve the initial workspace:
-			//   1. The user's last-opened folder, if it still exists on disk.
-			//   2. The platform-appropriate default (see GetStandaloneRoot).
-			if (MainFolder.IsNullOrEmpty() || MainFolder == "res://")
-			{
-				var saved = LoadLastFolder();
-				if (!saved.IsNullOrEmpty())
-				{
-					MainFolder = saved;
-					GD.Print($"[Inkodot] Restored last folder: '{saved}'");
-				}
-				else
-				{
-					MainFolder = GetStandaloneRoot();
-				}
-			}
-
-			// If the workspace is empty (first launch, or user cleared it),
-			// populate it with the demos bundled inside the .pck.
+			RestoreLastFolder();
 			EnsureDemoFiles();
 
 			CreateMenu();
@@ -85,6 +73,29 @@ public sealed partial class InkEditor : CodeEdit
 		catch (Exception ex)
 		{
 			GD.PrintErr($"{ex}");
+		}
+	}
+
+	/// <summary>
+	/// Applies the saved workspace folder when the current value is still the
+	/// scene default. Falls back to the standalone root (desktop) or leaves
+	/// MainFolder at res:// (plugin mode) when nothing is saved.
+	/// </summary>
+	void RestoreLastFolder()
+	{
+		if (!MainFolder.IsNullOrEmpty() && MainFolder != "res://") return;
+
+		var saved = LoadLastFolder();
+		if (!saved.IsNullOrEmpty())
+		{
+			MainFolder = saved;
+			// GD.Print($"[Inkodot] Restored last folder: '{saved}'");
+		}
+		else if (!Engine.IsEditorHint())
+		{
+			// Only the standalone app has a meaningful default folder.
+			// In plugin mode we leave res:// as the fallback.
+			MainFolder = GetStandaloneRoot();
 		}
 	}
 
@@ -220,20 +231,20 @@ public sealed partial class InkEditor : CodeEdit
 		{
 			var mobileRoot = OS.GetUserDataDir().PathJoin("ink");
 			DirAccess.MakeDirRecursiveAbsolute(mobileRoot);
-			GD.Print($"[Inkodot] Mobile root: {mobileRoot}");
+			// GD.Print($"[Inkodot] Mobile root: {mobileRoot}");
 			return mobileRoot;
 		}
 
 		// --- Desktop ---------------------------------------------------
 		var exePath = OS.GetExecutablePath();
-		GD.Print($"[Inkodot] Executable path: '{exePath}'");
+		// GD.Print($"[Inkodot] Executable path: '{exePath}'");
 
 		var exeDir = exePath.GetBaseDir();
 
 		if (OS.HasFeature("macos") && exeDir.GetFile() == "MacOS")
 		{
 			exeDir = exeDir.GetBaseDir().GetBaseDir().GetBaseDir();
-			GD.Print($"[Inkodot] macOS bundle detected, walked out to: '{exeDir}'");
+			// GD.Print($"[Inkodot] macOS bundle detected, walked out to: '{exeDir}'");
 		}
 
 		var exeDirValid =
@@ -254,7 +265,7 @@ public sealed partial class InkEditor : CodeEdit
 		}
 
 		var root = exeDir.PathJoin("ink");
-		GD.Print($"[Inkodot] Using root folder: '{root}'");
+		// GD.Print($"[Inkodot] Using root folder: '{root}'");
 
 		if (!DirAccess.DirExistsAbsolute(root))
 		{
@@ -296,18 +307,18 @@ public sealed partial class InkEditor : CodeEdit
 
 		if (HasAnyInkFiles(MainFolder))
 		{
-			GD.Print("[Inkodot] Workspace already has .ink files, skipping demo extraction.");
+			// GD.Print("[Inkodot] Workspace already has .ink files, skipping demo extraction.");
 			return;
 		}
 
 		var demoSource = "res://ink_demos";
 		if (!DirAccess.DirExistsAbsolute(demoSource))
 		{
-			GD.Print("[Inkodot] No demos bundled, skipping extraction.");
+			// GD.Print("[Inkodot] No demos bundled, skipping extraction.");
 			return;
 		}
 
-		GD.Print($"[Inkodot] Extracting demos to '{MainFolder}'...");
+		// GD.Print($"[Inkodot] Extracting demos to '{MainFolder}'...");
 		CopyDirectoryRecursive(demoSource, MainFolder);
 	}
 
@@ -367,9 +378,9 @@ public sealed partial class InkEditor : CodeEdit
 
 	//> Session persistence
 
-	const string ConfigPath     = "user://inkodot.cfg";
+	const string ConfigPath = "user://inkodot.cfg";
 	const string SessionSection = "session";
-	const string LastFolderKey  = "last_folder";
+	const string LastFolderKey = "last_folder";
 
 	static string LoadLastFolder()
 	{

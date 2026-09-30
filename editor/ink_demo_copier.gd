@@ -1,5 +1,7 @@
 @tool
 extends EditorExportPlugin
+## Copies demos in exported folder. Intended for Standalone Editor
+
 
 const DEMO_SOURCE := "res://ink_demos"
 const DEMO_DEST_NAME := "ink"
