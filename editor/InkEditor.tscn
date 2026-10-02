@@ -1475,7 +1475,7 @@ indent_automatic_prefixes = Array[String]([":", "{", "[", "(", "*", "-", "+"])
 auto_brace_completion_enabled = true
 auto_brace_completion_highlight_matching = true
 script = ExtResource("3_pppn0")
-MainFolder = "C:/Users/Loregret/Documents/dreamiour/_scenarios"
+MainFolder = "res://_scenarios"
 DialogueNode = NodePath("../../../VBoxContainer/Dialogue")
 metadata/_edit_use_anchors_ = true
 
